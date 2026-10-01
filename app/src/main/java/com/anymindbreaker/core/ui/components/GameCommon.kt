@@ -75,7 +75,7 @@ fun GameScaffold(
             TopAppBar(
                 title = { Text(title) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = onBack, modifier = Modifier.testTag("game_back")) {
                         Icon(
                             painter = painterResource(R.drawable.ic_arrow_back),
                             contentDescription = stringResource(R.string.action_back),
@@ -295,6 +295,7 @@ fun GameResultContent(
     accuracyPercent: Int?,
     onPlayAgain: () -> Unit,
     onChangeSettings: () -> Unit,
+    onOpenStatistics: () -> Unit,
     modifier: Modifier = Modifier,
     testTag: String = "game_result",
 ) {
@@ -342,6 +343,14 @@ fun GameResultContent(
         Spacer(Modifier.height(Spacing.xs))
         OutlinedButton(onClick = onChangeSettings, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.action_change_settings))
+        }
+        TextButton(
+            onClick = onOpenStatistics,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("result_statistics"),
+        ) {
+            Text(stringResource(R.string.action_view_statistics))
         }
         Spacer(Modifier.height(Spacing.md))
     }

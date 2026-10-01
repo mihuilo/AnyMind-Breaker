@@ -1,5 +1,7 @@
 package com.anymindbreaker.feature.sudoku.presentation
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +29,7 @@ import com.anymindbreaker.core.ui.components.GameScaffold
 import com.anymindbreaker.core.ui.components.GameSetupColumn
 import com.anymindbreaker.core.ui.components.GameStatusHeader
 import com.anymindbreaker.core.ui.components.LoadingContent
+import com.anymindbreaker.core.ui.components.PHASE_FADE_MILLIS
 import com.anymindbreaker.core.ui.components.ResumeGameDialog
 import com.anymindbreaker.core.ui.components.SwitchCard
 import com.anymindbreaker.core.ui.components.accuracyPercent
@@ -42,6 +45,7 @@ fun SudokuScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     resumeSavedGame: Boolean = false,
+    onOpenStatistics: () -> Unit = {},
     feedback: GameFeedback = appContainer().feedback,
     viewModel: SudokuViewModel = run {
         val container = appContainer()
@@ -83,46 +87,54 @@ fun SudokuScreen(
             .padding(padding)
             .padding(horizontal = Spacing.md)
         val game = uiState.game
-        when {
-            uiState.phase == GamePhase.SETUP -> GameSetupColumn(
-                onStart = viewModel::onStartGame,
-                modifier = contentModifier,
-                startTestTag = "sudoku_start",
-            ) {
-                DifficultyGroup(
-                    selected = uiState.difficulty,
-                    onSelect = viewModel::onDifficultySelected,
+        // A short fade keeps the move between setup, play and result from feeling abrupt.
+        Crossfade(
+            targetState = uiState.phase,
+            animationSpec = tween(PHASE_FADE_MILLIS),
+            label = "game phase",
+        ) { phase ->
+            when {
+                phase == GamePhase.SETUP -> GameSetupColumn(
+                    onStart = viewModel::onStartGame,
+                    modifier = contentModifier,
+                    startTestTag = "sudoku_start",
+                ) {
+                    DifficultyGroup(
+                        selected = uiState.difficulty,
+                        onSelect = viewModel::onDifficultySelected,
+                    )
+                    SwitchCard(
+                        title = stringResource(R.string.sudoku_instant_check),
+                        description = stringResource(R.string.sudoku_instant_check_description),
+                        checked = uiState.instantCheck,
+                        onCheckedChange = viewModel::onInstantCheckChanged,
+                    )
+                }
+                phase == GamePhase.FINISHED && game != null -> GameResultContent(
+                    result = game.result,
+                    elapsedSeconds = game.elapsedSeconds,
+                    score = uiState.score,
+                    mistakes = game.mistakes,
+                    hintsUsed = game.hintsUsed,
+                    accuracyPercent = accuracyPercent(game.entries, game.mistakes),
+                    onPlayAgain = viewModel::onStartGame,
+                    onChangeSettings = viewModel::onNewGame,
+                    onOpenStatistics = onOpenStatistics,
+                    modifier = contentModifier,
+                    testTag = "sudoku_result",
                 )
-                SwitchCard(
-                    title = stringResource(R.string.sudoku_instant_check),
-                    description = stringResource(R.string.sudoku_instant_check_description),
-                    checked = uiState.instantCheck,
-                    onCheckedChange = viewModel::onInstantCheckChanged,
+                phase == GamePhase.PLAYING && game != null -> SudokuPlay(
+                    state = game,
+                    difficulty = uiState.difficulty,
+                    onAction = viewModel::onAction,
+                    // Narrower side margins than the other phases leave more room for the grid.
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(horizontal = Spacing.xs),
                 )
+                else -> LoadingContent(modifier = contentModifier)
             }
-            uiState.phase == GamePhase.FINISHED && game != null -> GameResultContent(
-                result = game.result,
-                elapsedSeconds = game.elapsedSeconds,
-                score = uiState.score,
-                mistakes = game.mistakes,
-                hintsUsed = game.hintsUsed,
-                accuracyPercent = accuracyPercent(game.entries, game.mistakes),
-                onPlayAgain = viewModel::onStartGame,
-                onChangeSettings = viewModel::onNewGame,
-                modifier = contentModifier,
-                testTag = "sudoku_result",
-            )
-            uiState.phase == GamePhase.PLAYING && game != null -> SudokuPlay(
-                state = game,
-                difficulty = uiState.difficulty,
-                onAction = viewModel::onAction,
-                // Narrower side margins than the other phases leave more room for the grid.
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = Spacing.xs),
-            )
-            else -> LoadingContent(modifier = contentModifier)
         }
     }
 }

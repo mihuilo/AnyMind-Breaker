@@ -1,5 +1,7 @@
 package com.anymindbreaker.feature.cryptogram.presentation
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +35,7 @@ import com.anymindbreaker.core.ui.components.GameSetupColumn
 import com.anymindbreaker.core.ui.components.GameStatusHeader
 import com.anymindbreaker.core.ui.components.LoadingContent
 import com.anymindbreaker.core.ui.components.OptionGroup
+import com.anymindbreaker.core.ui.components.PHASE_FADE_MILLIS
 import com.anymindbreaker.core.ui.components.ResumeGameDialog
 import com.anymindbreaker.core.ui.components.SwitchCard
 import com.anymindbreaker.core.ui.components.accuracyPercent
@@ -48,6 +51,7 @@ fun CryptogramScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     resumeSavedGame: Boolean = false,
+    onOpenStatistics: () -> Unit = {},
     feedback: GameFeedback = appContainer().feedback,
     viewModel: CryptogramViewModel = run {
         val container = appContainer()
@@ -90,53 +94,61 @@ fun CryptogramScreen(
             .padding(padding)
             .padding(horizontal = Spacing.md)
         val game = uiState.game
-        when {
-            uiState.phase == GamePhase.SETUP -> GameSetupColumn(
-                onStart = viewModel::onStartGame,
-                modifier = contentModifier,
-                startTestTag = "crypto_start",
-            ) {
-                OptionGroup(
-                    title = stringResource(R.string.puzzle_language_title),
-                    options = Language.entries,
-                    selected = uiState.language,
-                    label = { stringResource(it.labelRes()) },
-                    onSelect = viewModel::onLanguageSelected,
+        // A short fade keeps the move between setup, play and result from feeling abrupt.
+        Crossfade(
+            targetState = uiState.phase,
+            animationSpec = tween(PHASE_FADE_MILLIS),
+            label = "game phase",
+        ) { phase ->
+            when {
+                phase == GamePhase.SETUP -> GameSetupColumn(
+                    onStart = viewModel::onStartGame,
+                    modifier = contentModifier,
+                    startTestTag = "crypto_start",
+                ) {
+                    OptionGroup(
+                        title = stringResource(R.string.puzzle_language_title),
+                        options = Language.entries,
+                        selected = uiState.language,
+                        label = { stringResource(it.labelRes()) },
+                        onSelect = viewModel::onLanguageSelected,
+                    )
+                    DifficultyGroup(
+                        selected = uiState.difficulty,
+                        onSelect = viewModel::onDifficultySelected,
+                    )
+                    SwitchCard(
+                        title = stringResource(R.string.game_lives),
+                        description = stringResource(R.string.game_lives_description),
+                        checked = uiState.livesEnabled,
+                        onCheckedChange = viewModel::onLivesEnabledChanged,
+                    )
+                }
+                phase == GamePhase.FINISHED && game != null -> GameResultContent(
+                    result = game.result,
+                    elapsedSeconds = game.elapsedSeconds,
+                    score = uiState.score,
+                    mistakes = game.mistakes,
+                    hintsUsed = game.hintsUsed,
+                    accuracyPercent = accuracyPercent(game.entries, game.mistakes),
+                    onPlayAgain = viewModel::onStartGame,
+                    onChangeSettings = viewModel::onNewGame,
+                    onOpenStatistics = onOpenStatistics,
+                    modifier = contentModifier,
+                    testTag = "crypto_result",
                 )
-                DifficultyGroup(
-                    selected = uiState.difficulty,
-                    onSelect = viewModel::onDifficultySelected,
+                phase == GamePhase.PLAYING && game != null -> CryptogramPlay(
+                    state = game,
+                    language = uiState.gameLanguage,
+                    difficulty = uiState.difficulty,
+                    onAction = viewModel::onAction,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(horizontal = Spacing.xs),
                 )
-                SwitchCard(
-                    title = stringResource(R.string.game_lives),
-                    description = stringResource(R.string.game_lives_description),
-                    checked = uiState.livesEnabled,
-                    onCheckedChange = viewModel::onLivesEnabledChanged,
-                )
+                else -> LoadingContent(modifier = contentModifier)
             }
-            uiState.phase == GamePhase.FINISHED && game != null -> GameResultContent(
-                result = game.result,
-                elapsedSeconds = game.elapsedSeconds,
-                score = uiState.score,
-                mistakes = game.mistakes,
-                hintsUsed = game.hintsUsed,
-                accuracyPercent = accuracyPercent(game.entries, game.mistakes),
-                onPlayAgain = viewModel::onStartGame,
-                onChangeSettings = viewModel::onNewGame,
-                modifier = contentModifier,
-                testTag = "crypto_result",
-            )
-            uiState.phase == GamePhase.PLAYING && game != null -> CryptogramPlay(
-                state = game,
-                language = uiState.gameLanguage,
-                difficulty = uiState.difficulty,
-                onAction = viewModel::onAction,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = Spacing.xs),
-            )
-            else -> LoadingContent(modifier = contentModifier)
         }
     }
 }

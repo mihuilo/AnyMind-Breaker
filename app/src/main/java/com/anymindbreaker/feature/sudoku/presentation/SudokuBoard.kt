@@ -13,16 +13,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.anymindbreaker.R
+import com.anymindbreaker.core.ui.components.rememberPopScale
+import com.anymindbreaker.core.ui.components.rememberShakeOffset
 import com.anymindbreaker.core.ui.theme.Spacing
 import com.anymindbreaker.feature.sudoku.domain.SudokuState
 
@@ -65,6 +73,14 @@ fun SudokuBoard(
                         value = value,
                         isGiven = state.given[index],
                         isWrong = index in state.wrong,
+                        shake = index == selected && index in state.wrong,
+                        mistakes = state.mistakes,
+                        description = stringResource(
+                            R.string.sudoku_cell_description,
+                            row + 1,
+                            col + 1,
+                            if (value == 0) stringResource(R.string.cell_empty) else value.toString(),
+                        ),
                         background = cellBackground(
                             isSelected = index == selected,
                             isWrong = index in state.wrong,
@@ -106,14 +122,20 @@ private fun SudokuCell(
     value: Int,
     isGiven: Boolean,
     isWrong: Boolean,
+    shake: Boolean,
+    mistakes: Int,
+    description: String,
     background: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val shakeOffset by rememberShakeOffset(mistakes, shake)
+    val popScale by rememberPopScale(value.takeIf { it != 0 })
     Box(
         modifier = modifier
             .background(background)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         if (value != 0) {
@@ -125,6 +147,11 @@ private fun SudokuCell(
                     isWrong -> MaterialTheme.colorScheme.error
                     isGiven -> MaterialTheme.colorScheme.onSurface
                     else -> MaterialTheme.colorScheme.primary
+                },
+                modifier = Modifier.graphicsLayer {
+                    translationX = shakeOffset.dp.toPx()
+                    scaleX = popScale
+                    scaleY = popScale
                 },
             )
         }

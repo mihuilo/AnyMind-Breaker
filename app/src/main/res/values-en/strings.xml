@@ -104,4 +104,8 @@
     <string name="achievement_under_a_minute">A puzzle in under a minute</string>
     <string name="achievement_unlocked">Unlocked</string>
     <string name="achievement_locked">Locked</string>
+    <string name="action_view_statistics">View statistics</string>
+    <string name="cell_empty">empty</string>
+    <string name="sudoku_cell_description">Row %1$d, column %2$d: %3$s</string>
+    <string name="cryptogram_cell_description">Cipher letter %1$s, answer: %2$s</string>
 </resources>

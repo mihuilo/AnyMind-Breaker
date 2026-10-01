@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -53,6 +54,7 @@ fun AnyMindBreakerApp() {
                                 )
                             },
                             label = { Text(stringResource(destination.labelRes)) },
+                            modifier = Modifier.testTag("nav_${destination.name}"),
                         )
                     }
                 }

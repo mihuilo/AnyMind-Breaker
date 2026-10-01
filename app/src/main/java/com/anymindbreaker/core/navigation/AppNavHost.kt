@@ -2,6 +2,7 @@ package com.anymindbreaker.core.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +26,14 @@ fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
+    val openStatistics: () -> Unit = {
+        navController.navigate(StatisticsRoute) {
+            // Leaves the finished game behind, as if the tab had been chosen in the bottom bar.
+            popUpTo(navController.graph.findStartDestination().id)
+            launchSingleTop = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = HomeRoute,
@@ -45,12 +54,14 @@ fun AppNavHost(
             CryptogramScreen(
                 onBack = navController::popBackStack,
                 resumeSavedGame = entry.toRoute<CryptogramRoute>().resume,
+                onOpenStatistics = openStatistics,
             )
         }
         composable<SudokuRoute> { entry ->
             SudokuScreen(
                 onBack = navController::popBackStack,
                 resumeSavedGame = entry.toRoute<SudokuRoute>().resume,
+                onOpenStatistics = openStatistics,
             )
         }
     }

@@ -17,15 +17,23 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.anymindbreaker.R
 import com.anymindbreaker.core.common.game.Language
+import com.anymindbreaker.core.ui.components.rememberPopScale
+import com.anymindbreaker.core.ui.components.rememberShakeOffset
 import com.anymindbreaker.core.ui.theme.Spacing
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramAlphabet
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramState
@@ -77,6 +85,8 @@ fun CryptogramText(
                             answer = state.answerAt(index),
                             cipher = cipher,
                             answerColor = answerColor(state, cipher, index in state.revealed),
+                            shake = cipher == selectedCipher && cipher in state.wrong,
+                            mistakes = state.mistakes,
                             background = when {
                                 index == state.selected -> MaterialTheme.colorScheme.primaryContainer
                                 cipher == selectedCipher -> MaterialTheme.colorScheme.secondaryContainer
@@ -99,16 +109,26 @@ private fun LetterCell(
     answer: Char?,
     cipher: Char,
     answerColor: Color,
+    shake: Boolean,
+    mistakes: Int,
     background: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val shakeOffset by rememberShakeOffset(mistakes, shake)
+    val popScale by rememberPopScale(answer)
+    val description = stringResource(
+        R.string.cryptogram_cell_description,
+        cipher.toString(),
+        answer?.toString() ?: stringResource(R.string.cell_empty),
+    )
     Column(
         modifier = modifier
             .width(CELL_WIDTH)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(background)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .clearAndSetSemantics { contentDescription = description },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -116,6 +136,11 @@ private fun LetterCell(
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
             color = answerColor,
+            modifier = Modifier.graphicsLayer {
+                translationX = shakeOffset.dp.toPx()
+                scaleX = popScale
+                scaleY = popScale
+            },
         )
         Box(
             modifier = Modifier

@@ -13,13 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.anymindbreaker.R
-import com.anymindbreaker.core.ui.components.GameCard
+import com.anymindbreaker.core.common.game.GameType
+import com.anymindbreaker.core.ui.components.GameList
 import com.anymindbreaker.core.ui.theme.Spacing
 
 @Composable
 fun GamesScreen(
-    onOpenCryptogram: () -> Unit,
-    onOpenSudoku: () -> Unit,
+    onOpenGame: (GameType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -34,17 +34,6 @@ fun GamesScreen(
             text = stringResource(R.string.games_title),
             style = MaterialTheme.typography.headlineMedium,
         )
-        GameCard(
-            title = stringResource(R.string.game_cryptogram),
-            description = stringResource(R.string.game_cryptogram_description),
-            iconRes = R.drawable.ic_cryptogram,
-            onClick = onOpenCryptogram,
-        )
-        GameCard(
-            title = stringResource(R.string.game_sudoku),
-            description = stringResource(R.string.game_sudoku_description),
-            iconRes = R.drawable.ic_sudoku,
-            onClick = onOpenSudoku,
-        )
+        GameList(onOpenGame = onOpenGame)
     }
 }

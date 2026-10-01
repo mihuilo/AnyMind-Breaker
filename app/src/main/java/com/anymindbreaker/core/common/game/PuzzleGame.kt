@@ -5,6 +5,10 @@ interface GameAction
 
 /** Part of the game state shared by every game; games add their own fields. */
 interface GameState {
+    val elapsedSeconds: Long
+
+    /** Number of answers the player has entered, used to compute accuracy. */
+    val entries: Int
     val mistakes: Int
     val hintsUsed: Int
 

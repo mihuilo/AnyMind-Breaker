@@ -16,7 +16,9 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -83,6 +85,29 @@ fun GameScaffold(
             )
         },
         content = content,
+    )
+}
+
+/** Asks whether to continue the unfinished game found when a game screen is opened. */
+@Composable
+fun ResumeGameDialog(
+    onResume: () -> Unit,
+    onStartNew: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onStartNew,
+        title = { Text(stringResource(R.string.resume_title)) },
+        text = { Text(stringResource(R.string.resume_text)) },
+        confirmButton = {
+            TextButton(onClick = onResume, modifier = Modifier.testTag("resume_continue")) {
+                Text(stringResource(R.string.action_continue))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onStartNew) {
+                Text(stringResource(R.string.action_start_new))
+            }
+        },
     )
 }
 

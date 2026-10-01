@@ -56,4 +56,9 @@
     <string name="hint_position">Position</string>
     <string name="result_failed">Game over</string>
     <string name="action_change_settings">Change settings</string>
+    <string name="resume_title">Continue the game?</string>
+    <string name="resume_text">You have an unfinished game.</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_start_new">Start new</string>
+    <string name="home_continue">Continue: %1$s</string>
 </resources>

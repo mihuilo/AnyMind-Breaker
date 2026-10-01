@@ -60,4 +60,9 @@
     <string name="hint_position">Позиция</string>
     <string name="result_failed">Игра окончена</string>
     <string name="action_change_settings">Изменить настройки</string>
+    <string name="resume_title">Продолжить игру?</string>
+    <string name="resume_text">У вас есть незавершённая игра.</string>
+    <string name="action_continue">Продолжить</string>
+    <string name="action_start_new">Начать новую</string>
+    <string name="home_continue">Продолжить: %1$s</string>
 </resources>

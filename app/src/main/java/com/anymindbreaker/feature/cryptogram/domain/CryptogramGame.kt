@@ -23,9 +23,8 @@ data class CryptogramState(
     val revealed: Map<Int, Char> = emptyMap(),
     /** Index of the selected character of the text. */
     val selected: Int? = null,
-    val elapsedSeconds: Long = 0,
-    /** Number of letters the player has entered, used to compute accuracy. */
-    val entries: Int = 0,
+    override val elapsedSeconds: Long = 0,
+    override val entries: Int = 0,
     override val mistakes: Int = 0,
     override val hintsUsed: Int = 0,
     override val livesLeft: Int? = null,

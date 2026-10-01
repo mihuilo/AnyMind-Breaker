@@ -8,6 +8,7 @@ import com.anymindbreaker.core.common.game.GameType
 import com.anymindbreaker.core.common.game.PuzzleGame
 import com.anymindbreaker.core.common.game.ScoreCalculator
 import com.anymindbreaker.core.common.game.ScoreInput
+import kotlinx.serialization.Serializable
 
 enum class SudokuCheckMode {
     /** A wrong digit is reported as soon as it is entered. */
@@ -17,15 +18,15 @@ enum class SudokuCheckMode {
     CLASSIC,
 }
 
+@Serializable
 data class SudokuState(
     val values: List<Int>,
     val given: List<Boolean>,
     val wrong: Set<Int> = emptySet(),
     val selected: Int? = null,
     val checkMode: SudokuCheckMode,
-    val elapsedSeconds: Long = 0,
-    /** Number of digits the player has entered, used to compute accuracy. */
-    val entries: Int = 0,
+    override val elapsedSeconds: Long = 0,
+    override val entries: Int = 0,
     override val mistakes: Int = 0,
     override val hintsUsed: Int = 0,
     override val livesLeft: Int? = null,
@@ -45,14 +46,15 @@ class SudokuGame(
     private val puzzle: SudokuPuzzle,
     private val checkMode: SudokuCheckMode,
     private val scoreCalculator: ScoreCalculator,
+    initialState: SudokuState? = null,
 ) : PuzzleGame<SudokuState, SudokuAction> {
 
     override val gameType: GameType = GameType.SUDOKU
 
-    private var state = initialState()
+    private var state = initialState ?: newState()
 
     override fun start() {
-        state = initialState()
+        state = newState()
     }
 
     override fun getState(): SudokuState = state
@@ -82,7 +84,7 @@ class SudokuGame(
         ),
     )
 
-    private fun initialState() = SudokuState(
+    private fun newState() = SudokuState(
         values = puzzle.givens,
         given = puzzle.givens.map { it != 0 },
         checkMode = checkMode,

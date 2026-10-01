@@ -34,6 +34,7 @@ import com.anymindbreaker.core.ui.components.GameSetupColumn
 import com.anymindbreaker.core.ui.components.GameStatusHeader
 import com.anymindbreaker.core.ui.components.LoadingContent
 import com.anymindbreaker.core.ui.components.OptionGroup
+import com.anymindbreaker.core.ui.components.ResumeGameDialog
 import com.anymindbreaker.core.ui.components.SwitchCard
 import com.anymindbreaker.core.ui.components.accuracyPercent
 import com.anymindbreaker.core.ui.components.labelRes
@@ -45,6 +46,7 @@ import com.anymindbreaker.feature.cryptogram.domain.CryptogramState
 fun CryptogramScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    resumeSavedGame: Boolean = false,
     viewModel: CryptogramViewModel = run {
         val container = appContainer()
         // Until content language becomes a setting, puzzles follow the interface language.
@@ -53,12 +55,23 @@ fun CryptogramScreen(
             CryptogramViewModel(
                 textSource = container.cryptogramTexts,
                 scoreCalculator = container.scoreCalculator,
+                repository = container.gameRepository,
+                persistenceScope = container.applicationScope,
                 defaultLanguage = if (isRussian) Language.RU else Language.EN,
+                resumeSavedGame = resumeSavedGame,
             )
         }
     },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val savedGameAvailable by viewModel.savedGameAvailable.collectAsStateWithLifecycle()
+
+    if (savedGameAvailable && uiState.phase == GamePhase.SETUP) {
+        ResumeGameDialog(
+            onResume = viewModel::onResumeSavedGame,
+            onStartNew = viewModel::onDismissSavedGame,
+        )
+    }
 
     LifecycleResumeEffect(viewModel) {
         viewModel.onScreenVisibilityChanged(true)

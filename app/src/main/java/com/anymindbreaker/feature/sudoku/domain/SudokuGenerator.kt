@@ -4,9 +4,11 @@ import com.anymindbreaker.core.common.game.Difficulty
 import com.anymindbreaker.core.common.game.GameType
 import com.anymindbreaker.core.common.game.Language
 import com.anymindbreaker.core.common.game.Puzzle
+import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.random.Random
 
+@Serializable
 data class SudokuPuzzle(
     override val id: String,
     override val difficulty: Difficulty,

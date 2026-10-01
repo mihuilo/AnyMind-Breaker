@@ -27,6 +27,7 @@ import com.anymindbreaker.core.ui.components.GameScaffold
 import com.anymindbreaker.core.ui.components.GameSetupColumn
 import com.anymindbreaker.core.ui.components.GameStatusHeader
 import com.anymindbreaker.core.ui.components.LoadingContent
+import com.anymindbreaker.core.ui.components.ResumeGameDialog
 import com.anymindbreaker.core.ui.components.SwitchCard
 import com.anymindbreaker.core.ui.components.accuracyPercent
 import com.anymindbreaker.core.ui.theme.Spacing
@@ -38,12 +39,28 @@ import com.anymindbreaker.feature.sudoku.domain.SudokuState
 fun SudokuScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    resumeSavedGame: Boolean = false,
     viewModel: SudokuViewModel = run {
         val container = appContainer()
-        viewModel { SudokuViewModel(container.scoreCalculator) }
+        viewModel {
+            SudokuViewModel(
+                repository = container.gameRepository,
+                persistenceScope = container.applicationScope,
+                scoreCalculator = container.scoreCalculator,
+                resumeSavedGame = resumeSavedGame,
+            )
+        }
     },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val savedGameAvailable by viewModel.savedGameAvailable.collectAsStateWithLifecycle()
+
+    if (savedGameAvailable && uiState.phase == GamePhase.SETUP) {
+        ResumeGameDialog(
+            onResume = viewModel::onResumeSavedGame,
+            onStartNew = viewModel::onDismissSavedGame,
+        )
+    }
 
     LifecycleResumeEffect(viewModel) {
         viewModel.onScreenVisibilityChanged(true)

@@ -18,10 +18,10 @@ data object StatisticsRoute
 data object SettingsRoute
 
 @Serializable
-data object CryptogramRoute
+data class CryptogramRoute(val resume: Boolean = false)
 
 @Serializable
-data object SudokuRoute
+data class SudokuRoute(val resume: Boolean = false)
 
 /** Destinations shown in the bottom navigation bar. */
 enum class TopLevelDestination(

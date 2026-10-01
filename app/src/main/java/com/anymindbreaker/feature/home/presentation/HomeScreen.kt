@@ -81,12 +81,14 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
             StatCard(
-                value = stringResource(R.string.minutes_short, 0),
+                value = stringResource(R.string.minutes_short, (uiState.today.playSeconds / 60).toInt()),
                 label = stringResource(R.string.home_today_play_time),
                 modifier = Modifier.weight(1f),
             )
             StatCard(
-                value = stringResource(R.string.value_empty),
+                value = uiState.today.accuracyPercent
+                    ?.let { stringResource(R.string.percent_value, it) }
+                    ?: stringResource(R.string.value_empty),
                 label = stringResource(R.string.home_today_accuracy),
                 modifier = Modifier.weight(1f),
             )

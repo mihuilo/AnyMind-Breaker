@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anymindbreaker.R
 import com.anymindbreaker.core.common.formatDuration
 import com.anymindbreaker.core.common.game.Difficulty
+import com.anymindbreaker.core.ui.components.GameActionButton
 import com.anymindbreaker.core.ui.theme.Spacing
 import com.anymindbreaker.feature.sudoku.domain.SudokuAction
 import com.anymindbreaker.feature.sudoku.domain.SudokuCheckMode
@@ -111,7 +112,11 @@ fun SudokuScreen(
                 state = game,
                 difficulty = uiState.difficulty,
                 onAction = viewModel::onAction,
-                modifier = contentModifier,
+                // Narrower side margins than the other phases leave more room for the grid.
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = Spacing.xs),
             )
             else -> Box(modifier = contentModifier, contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -206,12 +211,18 @@ private fun SudokuPlay(
     onAction: (SudokuAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
+    Column(modifier = modifier) {
+        Text(
+            text = formatDuration(state.elapsedSeconds),
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .testTag("sudoku_timer"),
+        )
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.xs, vertical = Spacing.xs),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -219,11 +230,6 @@ private fun SudokuPlay(
                 text = stringResource(difficulty.labelRes()),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = formatDuration(state.elapsedSeconds),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.testTag("sudoku_timer"),
             )
             Text(
                 text = stringResource(R.string.game_mistakes_count, state.mistakes),
@@ -240,29 +246,44 @@ private fun SudokuPlay(
             onCellClick = { onAction(SudokuAction.SelectCell(it)) },
             modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(Modifier.height(Spacing.sm))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            GameActionButton(
+                iconRes = R.drawable.ic_close,
+                label = stringResource(R.string.action_erase),
+                onClick = { onAction(SudokuAction.Erase) },
+                modifier = Modifier.testTag("sudoku_erase"),
+            )
+            GameActionButton(
+                iconRes = R.drawable.ic_hint,
+                label = stringResource(R.string.action_hint),
+                onClick = { onAction(SudokuAction.Hint) },
+                modifier = Modifier.testTag("sudoku_hint"),
+            )
+            // Reserved for a second kind of hint.
+            GameActionButton(
+                iconRes = R.drawable.ic_hint_outline,
+                label = stringResource(R.string.action_coming_soon),
+                onClick = {},
+                enabled = false,
+            )
+            if (state.checkMode == SudokuCheckMode.CLASSIC) {
+                GameActionButton(
+                    iconRes = R.drawable.ic_check,
+                    label = stringResource(R.string.action_check),
+                    onClick = { onAction(SudokuAction.Check) },
+                )
+            }
+        }
+        Spacer(Modifier.weight(1f))
         SudokuNumberPad(
             values = state.values,
             onDigit = { onAction(SudokuAction.InputDigit(it)) },
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            OutlinedButton(
-                onClick = { onAction(SudokuAction.Erase) },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(stringResource(R.string.action_erase))
-            }
-            if (state.checkMode == SudokuCheckMode.CLASSIC) {
-                Button(
-                    onClick = { onAction(SudokuAction.Check) },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(stringResource(R.string.action_check))
-                }
-            }
-        }
+        Spacer(Modifier.height(Spacing.lg))
     }
 }
 
@@ -301,6 +322,7 @@ private fun SudokuResult(
                 verticalArrangement = Arrangement.spacedBy(Spacing.xs),
             ) {
                 ResultRow(stringResource(R.string.result_mistakes), state.mistakes.toString())
+                ResultRow(stringResource(R.string.result_hints), state.hintsUsed.toString())
                 ResultRow(
                     label = stringResource(R.string.result_accuracy),
                     value = if (state.entries > 0) {

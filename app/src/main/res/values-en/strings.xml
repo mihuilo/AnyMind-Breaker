@@ -44,4 +44,7 @@
     <string name="result_mistakes">Mistakes</string>
     <string name="result_accuracy">Accuracy</string>
     <string name="percent_value">%1$d%%</string>
+    <string name="action_hint">Hint</string>
+    <string name="action_coming_soon">Soon</string>
+    <string name="result_hints">Hints</string>
 </resources>

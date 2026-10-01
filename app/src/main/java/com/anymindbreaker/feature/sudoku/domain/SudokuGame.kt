@@ -37,6 +37,7 @@ sealed interface SudokuAction : GameAction {
     data class InputDigit(val digit: Int) : SudokuAction
     data object Erase : SudokuAction
     data object Check : SudokuAction
+    data object Hint : SudokuAction
     data object Tick : SudokuAction
 }
 
@@ -64,6 +65,7 @@ class SudokuGame(
             is SudokuAction.InputDigit -> input(action.digit)
             SudokuAction.Erase -> erase()
             SudokuAction.Check -> check()
+            SudokuAction.Hint -> hint()
             SudokuAction.Tick -> state.copy(elapsedSeconds = state.elapsedSeconds + 1)
         }
     }
@@ -118,6 +120,27 @@ class SudokuGame(
             .toSet()
         // A cell already marked wrong is not counted as a new mistake.
         return state.copy(wrong = wrong, mistakes = state.mistakes + (wrong - state.wrong).size)
+    }
+
+    /**
+     * Reveals the selected cell, or the first unsolved cell when the selection is already correct.
+     * A revealed cell is locked like a given one.
+     */
+    private fun hint(): SudokuState {
+        fun unsolved(cell: Int) = !state.given[cell] && state.values[cell] != puzzle.solution[cell]
+        val cell = state.selected?.takeIf(::unsolved)
+            ?: state.values.indices.firstOrNull(::unsolved)
+            ?: return state
+
+        val values = state.values.toMutableList().also { it[cell] = puzzle.solution[cell] }
+        return state.copy(
+            values = values,
+            given = state.given.toMutableList().also { it[cell] = true },
+            wrong = state.wrong - cell,
+            selected = cell,
+            hintsUsed = state.hintsUsed + 1,
+            result = if (values == puzzle.solution) GameResult.COMPLETED else GameResult.IN_PROGRESS,
+        )
     }
 
     private fun targetSeconds(difficulty: Difficulty): Long = when (difficulty) {

@@ -46,4 +46,7 @@
     <string name="result_mistakes">Ошибки</string>
     <string name="result_accuracy">Точность</string>
     <string name="percent_value">%1$d%%</string>
+    <string name="action_hint">Подсказка</string>
+    <string name="action_coming_soon">Скоро</string>
+    <string name="result_hints">Подсказки</string>
 </resources>

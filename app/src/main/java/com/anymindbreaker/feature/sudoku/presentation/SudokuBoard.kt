@@ -119,7 +119,7 @@ private fun SudokuCell(
         if (value != 0) {
             Text(
                 text = value.toString(),
-                fontSize = 22.sp,
+                fontSize = 24.sp,
                 fontWeight = if (isGiven) FontWeight.SemiBold else FontWeight.Normal,
                 color = when {
                     isWrong -> MaterialTheme.colorScheme.error
@@ -141,7 +141,7 @@ fun SudokuNumberPad(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(64.dp),
         horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         for (digit in 1..SIZE) {
@@ -158,7 +158,7 @@ fun SudokuNumberPad(
             ) {
                 Text(
                     text = digit.toString(),
-                    fontSize = 24.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (exhausted) {
                         MaterialTheme.colorScheme.outlineVariant

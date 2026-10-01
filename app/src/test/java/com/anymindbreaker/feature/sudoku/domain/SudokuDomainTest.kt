@@ -293,4 +293,43 @@ class SudokuGameTest {
         assertEquals(0, game.getState().mistakes)
         assertEquals(KNOWN_PUZZLE.toList(), game.getState().values)
     }
+
+    @Test
+    fun hintRevealsAndLocksSelectedCell() {
+        val game = game()
+        game.enter(2, 1)
+        game.handleAction(SudokuAction.Hint)
+
+        val state = game.getState()
+        assertEquals(4, state.values[2])
+        assertTrue(state.given[2])
+        assertTrue(state.wrong.isEmpty())
+        assertEquals(1, state.hintsUsed)
+
+        game.enter(2, 9)
+        assertEquals(4, game.getState().values[2])
+    }
+
+    @Test
+    fun hintWithoutUsableSelectionRevealsFirstUnsolvedCell() {
+        val game = game()
+        game.handleAction(SudokuAction.SelectCell(0))
+        game.handleAction(SudokuAction.Hint)
+
+        val state = game.getState()
+        assertEquals(2, state.selected)
+        assertEquals(4, state.values[2])
+        assertEquals(1, state.hintsUsed)
+    }
+
+    @Test
+    fun hintOnLastCellCompletesGameWithLowerScore() {
+        val clean = game().also { it.solveAllExcept() }
+        val hinted = game().also {
+            it.solveAllExcept(skip = 2)
+            it.handleAction(SudokuAction.Hint)
+        }
+        assertTrue(hinted.isFinished())
+        assertTrue(hinted.calculateScore() < clean.calculateScore())
+    }
 }

@@ -23,4 +23,25 @@
     <string name="statistics_title">Statistics</string>
     <string name="settings_title">Settings</string>
     <string name="screen_in_development">This section is in development</string>
+    <string name="difficulty_title">Difficulty</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_normal">Normal</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="difficulty_expert">Expert</string>
+
+    <string name="action_start_game">Start game</string>
+    <string name="action_erase">Erase</string>
+    <string name="action_check">Check</string>
+    <string name="action_play_again">Play again</string>
+    <string name="action_change_difficulty">Change difficulty</string>
+
+    <string name="game_mistakes_count">Mistakes: %1$d</string>
+    <string name="sudoku_instant_check">Instant check</string>
+    <string name="sudoku_instant_check_description">A wrong digit is highlighted right away</string>
+
+    <string name="result_done">Done!</string>
+    <string name="result_score">Score: %1$d</string>
+    <string name="result_mistakes">Mistakes</string>
+    <string name="result_accuracy">Accuracy</string>
+    <string name="percent_value">%1$d%%</string>
 </resources>

@@ -25,4 +25,25 @@
     <string name="statistics_title">Статистика</string>
     <string name="settings_title">Настройки</string>
     <string name="screen_in_development">Раздел в разработке</string>
+    <string name="difficulty_title">Сложность</string>
+    <string name="difficulty_easy">Лёгкая</string>
+    <string name="difficulty_normal">Нормальная</string>
+    <string name="difficulty_hard">Сложная</string>
+    <string name="difficulty_expert">Эксперт</string>
+
+    <string name="action_start_game">Начать игру</string>
+    <string name="action_erase">Стереть</string>
+    <string name="action_check">Проверить</string>
+    <string name="action_play_again">Ещё раз</string>
+    <string name="action_change_difficulty">Изменить сложность</string>
+
+    <string name="game_mistakes_count">Ошибки: %1$d</string>
+    <string name="sudoku_instant_check">Мгновенная проверка</string>
+    <string name="sudoku_instant_check_description">Неверная цифра подсвечивается сразу</string>
+
+    <string name="result_done">Готово!</string>
+    <string name="result_score">Очки: %1$d</string>
+    <string name="result_mistakes">Ошибки</string>
+    <string name="result_accuracy">Точность</string>
+    <string name="percent_value">%1$d%%</string>
 </resources>

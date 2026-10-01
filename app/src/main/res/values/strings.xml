@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Any-Mind-Breaker</string>
+
+    <string name="nav_home">Главная</string>
+    <string name="nav_games">Игры</string>
+    <string name="nav_statistics">Статистика</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="action_back">Назад</string>
+
+    <string name="home_welcome">Добро пожаловать</string>
+    <string name="home_today">Сегодня</string>
+    <string name="home_today_play_time">в игре</string>
+    <string name="home_today_accuracy">точность</string>
+    <string name="home_games">Игры</string>
+    <string name="minutes_short">%1$d мин</string>
+    <string name="value_empty">—</string>
+
+    <string name="game_cryptogram">Криптограмма</string>
+    <string name="game_cryptogram_description">Восстановите текст, заменив каждую букву шифра</string>
+    <string name="game_sudoku">Судоку</string>
+    <string name="game_sudoku_description">Классическое поле 9×9</string>
+
+    <string name="games_title">Игры</string>
+    <string name="statistics_title">Статистика</string>
+    <string name="settings_title">Настройки</string>
+    <string name="screen_in_development">Раздел в разработке</string>
+</resources>

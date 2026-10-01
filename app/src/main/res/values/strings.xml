@@ -65,4 +65,18 @@
     <string name="action_continue">Продолжить</string>
     <string name="action_start_new">Начать новую</string>
     <string name="home_continue">Продолжить: %1$s</string>
+    <string name="settings_ui_language">Язык интерфейса</string>
+    <string name="settings_theme">Тема</string>
+    <string name="theme_system">Как в системе</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="settings_sound">Звук</string>
+    <string name="settings_sound_description">Правильный ответ, ошибка и завершение игры</string>
+    <string name="settings_vibration">Вибрация</string>
+    <string name="settings_vibration_description">При ошибке и при завершении игры</string>
+    <string name="settings_reset">Сбросить прогресс</string>
+    <string name="settings_reset_title">Сбросить прогресс?</string>
+    <string name="settings_reset_text">История игр, статистика и незавершённые игры будут удалены. Отменить это нельзя.</string>
+    <string name="settings_reset_confirm">Сбросить</string>
+    <string name="action_cancel">Отмена</string>
 </resources>

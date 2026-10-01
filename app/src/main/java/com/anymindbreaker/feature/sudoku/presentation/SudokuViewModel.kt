@@ -10,6 +10,8 @@ import com.anymindbreaker.core.common.game.GameViewModel
 import com.anymindbreaker.core.common.game.InMemoryGameRepository
 import com.anymindbreaker.core.common.game.PuzzleGame
 import com.anymindbreaker.core.common.game.ScoreCalculator
+import com.anymindbreaker.core.datastore.InMemorySettingsRepository
+import com.anymindbreaker.core.datastore.SettingsRepository
 import com.anymindbreaker.feature.sudoku.domain.SudokuAction
 import com.anymindbreaker.feature.sudoku.domain.SudokuCheckMode
 import com.anymindbreaker.feature.sudoku.domain.SudokuGame
@@ -23,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,6 +51,7 @@ class SudokuViewModel(
     repository: GameRepository = InMemoryGameRepository(),
     persistenceScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     private val scoreCalculator: ScoreCalculator = DefaultScoreCalculator(),
+    private val settings: SettingsRepository = InMemorySettingsRepository(),
     private val generator: SudokuGenerator = SudokuGenerator(),
     private val generationDispatcher: CoroutineDispatcher = Dispatchers.Default,
     resumeSavedGame: Boolean = false,
@@ -59,6 +63,10 @@ class SudokuViewModel(
     private var puzzle: SudokuPuzzle? = null
 
     init {
+        viewModelScope.launch {
+            val instantCheck = settings.settings.first().instantSudokuValidation
+            _uiState.update { if (it.phase == GamePhase.SETUP) it.copy(instantCheck = instantCheck) else it }
+        }
         checkSavedGame(resumeSavedGame)
     }
 
@@ -68,6 +76,7 @@ class SudokuViewModel(
 
     fun onInstantCheckChanged(enabled: Boolean) {
         _uiState.update { it.copy(instantCheck = enabled) }
+        viewModelScope.launch { settings.update { it.copy(instantSudokuValidation = enabled) } }
     }
 
     fun onStartGame() {

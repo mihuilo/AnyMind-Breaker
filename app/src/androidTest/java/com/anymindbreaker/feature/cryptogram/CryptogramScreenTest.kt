@@ -43,7 +43,6 @@ class CryptogramScreenTest {
         val viewModel = CryptogramViewModel(
             textSource = textSource,
             scoreCalculator = DefaultScoreCalculator(),
-            defaultLanguage = Language.EN,
             generator = CryptogramGenerator(Random(seed)),
         )
 

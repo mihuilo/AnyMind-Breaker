@@ -217,7 +217,6 @@ class GamePersistenceTest {
             scoreCalculator = DefaultScoreCalculator(),
             repository = repository,
             persistenceScope = CoroutineScope(dispatcher),
-            defaultLanguage = Language.EN,
             generator = CryptogramGenerator(Random(seed)),
             resumeSavedGame = resume,
         )

@@ -10,6 +10,8 @@ import com.anymindbreaker.core.common.game.InMemoryGameRepository
 import com.anymindbreaker.core.common.game.Language
 import com.anymindbreaker.core.common.game.PuzzleGame
 import com.anymindbreaker.core.common.game.ScoreCalculator
+import com.anymindbreaker.core.datastore.InMemorySettingsRepository
+import com.anymindbreaker.core.datastore.SettingsRepository
 import com.anymindbreaker.feature.cryptogram.data.CryptogramTextSource
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramAction
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramGame
@@ -22,6 +24,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -52,7 +55,7 @@ class CryptogramViewModel(
     private val scoreCalculator: ScoreCalculator,
     repository: GameRepository = InMemoryGameRepository(),
     persistenceScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
-    defaultLanguage: Language = Language.RU,
+    private val settings: SettingsRepository = InMemorySettingsRepository(),
     private val generator: CryptogramGenerator = CryptogramGenerator(),
     private val random: Random = Random.Default,
     resumeSavedGame: Boolean = false,
@@ -63,7 +66,7 @@ class CryptogramViewModel(
     persistenceScope,
 ) {
 
-    private val _uiState = MutableStateFlow(CryptogramUiState(language = defaultLanguage))
+    private val _uiState = MutableStateFlow(CryptogramUiState())
     val uiState: StateFlow<CryptogramUiState> = _uiState.asStateFlow()
 
     private var puzzle: CryptogramPuzzle? = null
@@ -71,6 +74,10 @@ class CryptogramViewModel(
     private var lastTextId: String? = null
 
     init {
+        viewModelScope.launch {
+            val language = settings.settings.first().contentLanguage
+            _uiState.update { if (it.phase == GamePhase.SETUP) it.copy(language = language) else it }
+        }
         checkSavedGame(resumeSavedGame)
     }
 
@@ -80,6 +87,7 @@ class CryptogramViewModel(
 
     fun onLanguageSelected(language: Language) {
         _uiState.update { it.copy(language = language) }
+        viewModelScope.launch { settings.update { it.copy(contentLanguage = language) } }
     }
 
     fun onLivesEnabledChanged(enabled: Boolean) {

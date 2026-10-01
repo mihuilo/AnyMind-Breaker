@@ -30,6 +30,8 @@ import com.anymindbreaker.core.ui.components.LoadingContent
 import com.anymindbreaker.core.ui.components.ResumeGameDialog
 import com.anymindbreaker.core.ui.components.SwitchCard
 import com.anymindbreaker.core.ui.components.accuracyPercent
+import com.anymindbreaker.core.ui.feedback.GameFeedback
+import com.anymindbreaker.core.ui.feedback.GameFeedbackEffect
 import com.anymindbreaker.core.ui.theme.Spacing
 import com.anymindbreaker.feature.sudoku.domain.SudokuAction
 import com.anymindbreaker.feature.sudoku.domain.SudokuCheckMode
@@ -40,6 +42,7 @@ fun SudokuScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     resumeSavedGame: Boolean = false,
+    feedback: GameFeedback = appContainer().feedback,
     viewModel: SudokuViewModel = run {
         val container = appContainer()
         viewModel {
@@ -47,6 +50,7 @@ fun SudokuScreen(
                 repository = container.gameRepository,
                 persistenceScope = container.applicationScope,
                 scoreCalculator = container.scoreCalculator,
+                settings = container.settings,
                 resumeSavedGame = resumeSavedGame,
             )
         }
@@ -54,6 +58,8 @@ fun SudokuScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val savedGameAvailable by viewModel.savedGameAvailable.collectAsStateWithLifecycle()
+
+    GameFeedbackEffect(uiState.game, feedback)
 
     if (savedGameAvailable && uiState.phase == GamePhase.SETUP) {
         ResumeGameDialog(

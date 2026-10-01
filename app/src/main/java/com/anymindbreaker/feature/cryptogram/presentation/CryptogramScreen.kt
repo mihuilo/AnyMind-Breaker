@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -38,6 +37,8 @@ import com.anymindbreaker.core.ui.components.ResumeGameDialog
 import com.anymindbreaker.core.ui.components.SwitchCard
 import com.anymindbreaker.core.ui.components.accuracyPercent
 import com.anymindbreaker.core.ui.components.labelRes
+import com.anymindbreaker.core.ui.feedback.GameFeedback
+import com.anymindbreaker.core.ui.feedback.GameFeedbackEffect
 import com.anymindbreaker.core.ui.theme.Spacing
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramAction
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramState
@@ -47,17 +48,16 @@ fun CryptogramScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     resumeSavedGame: Boolean = false,
+    feedback: GameFeedback = appContainer().feedback,
     viewModel: CryptogramViewModel = run {
         val container = appContainer()
-        // Until content language becomes a setting, puzzles follow the interface language.
-        val isRussian = LocalConfiguration.current.locales[0].language == "ru"
         viewModel {
             CryptogramViewModel(
                 textSource = container.cryptogramTexts,
                 scoreCalculator = container.scoreCalculator,
                 repository = container.gameRepository,
                 persistenceScope = container.applicationScope,
-                defaultLanguage = if (isRussian) Language.RU else Language.EN,
+                settings = container.settings,
                 resumeSavedGame = resumeSavedGame,
             )
         }
@@ -65,6 +65,8 @@ fun CryptogramScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val savedGameAvailable by viewModel.savedGameAvailable.collectAsStateWithLifecycle()
+
+    GameFeedbackEffect(uiState.game, feedback)
 
     if (savedGameAvailable && uiState.phase == GamePhase.SETUP) {
         ResumeGameDialog(

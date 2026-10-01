@@ -1,0 +1,37 @@
+[
+  { "id": "en_easy_01", "difficulty": "EASY", "text": "Practice makes perfect." },
+  { "id": "en_easy_02", "difficulty": "EASY", "text": "Better late than never." },
+  { "id": "en_easy_03", "difficulty": "EASY", "text": "Actions speak louder than words." },
+  { "id": "en_easy_04", "difficulty": "EASY", "text": "Every cloud has a silver lining." },
+  { "id": "en_easy_05", "difficulty": "EASY", "text": "Time flies when you are busy." },
+  { "id": "en_easy_06", "difficulty": "EASY", "text": "Look before you leap." },
+  { "id": "en_easy_07", "difficulty": "EASY", "text": "Two heads are better than one." },
+  { "id": "en_easy_08", "difficulty": "EASY", "text": "A good start is half the work." },
+
+  { "id": "en_normal_01", "difficulty": "NORMAL", "text": "A journey of a thousand miles begins with a single step." },
+  { "id": "en_normal_02", "difficulty": "NORMAL", "text": "The early bird catches the worm, but the second mouse gets the cheese." },
+  { "id": "en_normal_03", "difficulty": "NORMAL", "text": "You never really know a puzzle until you have solved it twice." },
+  { "id": "en_normal_04", "difficulty": "NORMAL", "text": "Small daily habits quietly build the biggest changes." },
+  { "id": "en_normal_05", "difficulty": "NORMAL", "text": "A clear question is already half of a good answer." },
+  { "id": "en_normal_06", "difficulty": "NORMAL", "text": "Patience turns a hard problem into a series of easy ones." },
+  { "id": "en_normal_07", "difficulty": "NORMAL", "text": "Read the whole page before you decide what it means." },
+  { "id": "en_normal_08", "difficulty": "NORMAL", "text": "Good ideas often arrive while you are doing something else." },
+
+  { "id": "en_hard_01", "difficulty": "HARD", "text": "A careful observer notices the pattern where a hurried one sees nothing but random noise." },
+  { "id": "en_hard_02", "difficulty": "HARD", "text": "Experienced players evaluate the whole position before calculating any particular variation." },
+  { "id": "en_hard_03", "difficulty": "HARD", "text": "The real difficulty of a puzzle rarely lies in its size but in the obscurity of the first move." },
+  { "id": "en_hard_04", "difficulty": "HARD", "text": "Doubting your own conclusions is the cheapest insurance against expensive mistakes." },
+  { "id": "en_hard_05", "difficulty": "HARD", "text": "Every deciphered letter narrows the possibilities and accelerates the remaining search." },
+  { "id": "en_hard_06", "difficulty": "HARD", "text": "Memory keeps what you understood far longer than what you merely repeated." },
+  { "id": "en_hard_07", "difficulty": "HARD", "text": "Logic without imagination is sterile, and imagination without logic is helpless." },
+  { "id": "en_hard_08", "difficulty": "HARD", "text": "Curiosity drags the researcher back to problems that everyone else abandoned long ago." },
+
+  { "id": "en_expert_01", "difficulty": "EXPERT", "text": "A cryptographer, studying symbol frequencies, gradually exposes the hidden structure of a message; patience matters more than erudition or a lucky guess." },
+  { "id": "en_expert_02", "difficulty": "EXPERT", "text": "Paradoxically, simplifying an explanation frequently demands considerably more effort than complicating it ever would." },
+  { "id": "en_expert_03", "difficulty": "EXPERT", "text": "Heuristics is the craft of finding an acceptable answer when an exhaustive search is, by any reasonable estimate, impossible." },
+  { "id": "en_expert_04", "difficulty": "EXPERT", "text": "The scrupulous analyst records even the most trivial anomalies: afterwards, they quite often turn out to be the key." },
+  { "id": "en_expert_05", "difficulty": "EXPERT", "text": "Overconfident players neglect to verify hypotheses, and they pay for it by having to begin the whole analysis again." },
+  { "id": "en_expert_06", "difficulty": "EXPERT", "text": "A grandmaster's phenomenal intuition is not mysticism but the experience of thousands of games, squeezed into an instant." },
+  { "id": "en_expert_07", "difficulty": "EXPERT", "text": "Whoever judges a jigsaw by its box quickly discovers that the awkward, unexceptional pieces determine everything." },
+  { "id": "en_expert_08", "difficulty": "EXPERT", "text": "Mnemonic techniques work because vivid, exaggerated images outlive dry and perfectly sensible facts." }
+]

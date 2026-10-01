@@ -33,7 +33,6 @@
     <string name="action_erase">Erase</string>
     <string name="action_check">Check</string>
     <string name="action_play_again">Play again</string>
-    <string name="action_change_difficulty">Change difficulty</string>
 
     <string name="game_mistakes_count">Mistakes: %1$d</string>
     <string name="sudoku_instant_check">Instant check</string>
@@ -47,4 +46,14 @@
     <string name="action_hint">Hint</string>
     <string name="action_coming_soon">Soon</string>
     <string name="result_hints">Hints</string>
+    <string name="puzzle_language_title">Puzzle language</string>
+    <string name="game_lives">Play with lives</string>
+    <string name="game_lives_description">The game ends when all lives are spent on mistakes</string>
+    <string name="game_lives_count">♥ %1$d</string>
+    <string name="cryptogram_table_title">Correspondence table</string>
+    <string name="hint_letter">Letter</string>
+    <string name="hint_word">Word</string>
+    <string name="hint_position">Position</string>
+    <string name="result_failed">Game over</string>
+    <string name="action_change_settings">Change settings</string>
 </resources>

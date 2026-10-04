@@ -31,7 +31,15 @@ data class SudokuState(
     override val hintsUsed: Int = 0,
     override val livesLeft: Int? = null,
     override val result: GameResult = GameResult.IN_PROGRESS,
-) : GameState
+) : GameState {
+
+    /** How many cells still have to be filled with [digit]. */
+    fun remaining(digit: Int): Int = (GRID_SIZE - values.count { it == digit }).coerceAtLeast(0)
+
+    private companion object {
+        const val GRID_SIZE = 9
+    }
+}
 
 sealed interface SudokuAction : GameAction {
     data class SelectCell(val index: Int) : SudokuAction
@@ -45,6 +53,8 @@ sealed interface SudokuAction : GameAction {
 class SudokuGame(
     private val puzzle: SudokuPuzzle,
     private val checkMode: SudokuCheckMode,
+    /** Number of lives, or null to play without lives. */
+    private val lives: Int?,
     private val scoreCalculator: ScoreCalculator,
     initialState: SudokuState? = null,
 ) : PuzzleGame<SudokuState, SudokuAction> {
@@ -88,6 +98,7 @@ class SudokuGame(
         values = puzzle.givens,
         given = puzzle.givens.map { it != 0 },
         checkMode = checkMode,
+        livesLeft = lives,
     )
 
     private fun editableSelection(): Int? = state.selected?.takeIf { !state.given[it] }
@@ -98,12 +109,18 @@ class SudokuGame(
 
         val values = state.values.toMutableList().also { it[cell] = digit }
         val isWrong = checkMode == SudokuCheckMode.INSTANT && digit != puzzle.solution[cell]
+        val livesLeft = if (isWrong) state.livesLeft?.let { it - 1 } else state.livesLeft
         return state.copy(
             values = values,
             wrong = if (isWrong) state.wrong + cell else state.wrong - cell,
             entries = state.entries + 1,
             mistakes = state.mistakes + if (isWrong) 1 else 0,
-            result = if (values == puzzle.solution) GameResult.COMPLETED else GameResult.IN_PROGRESS,
+            livesLeft = livesLeft,
+            result = when {
+                livesLeft != null && livesLeft <= 0 -> GameResult.FAILED
+                values == puzzle.solution -> GameResult.COMPLETED
+                else -> GameResult.IN_PROGRESS
+            },
         )
     }
 
@@ -121,7 +138,14 @@ class SudokuGame(
             .filter { state.values[it] != 0 && state.values[it] != puzzle.solution[it] }
             .toSet()
         // A cell already marked wrong is not counted as a new mistake.
-        return state.copy(wrong = wrong, mistakes = state.mistakes + (wrong - state.wrong).size)
+        val newMistakes = (wrong - state.wrong).size
+        val livesLeft = state.livesLeft?.let { (it - newMistakes).coerceAtLeast(0) }
+        return state.copy(
+            wrong = wrong,
+            mistakes = state.mistakes + newMistakes,
+            livesLeft = livesLeft,
+            result = if (livesLeft != null && livesLeft <= 0) GameResult.FAILED else GameResult.IN_PROGRESS,
+        )
     }
 
     /**

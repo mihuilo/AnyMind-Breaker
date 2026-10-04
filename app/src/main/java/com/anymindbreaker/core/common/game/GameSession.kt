@@ -14,6 +14,8 @@ data class GameSession(
     val hintsUsed: Int = 0,
     /** Number of answers the player entered; not in the original spec, needed for accuracy. */
     val entries: Int = 0,
+    /** False when mistakes were not limited; such a game resets the win streak. */
+    val livesEnabled: Boolean = true,
     val score: Int = 0,
     val result: GameResult = GameResult.IN_PROGRESS,
 )

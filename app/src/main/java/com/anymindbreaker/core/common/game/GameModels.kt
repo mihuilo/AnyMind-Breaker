@@ -23,3 +23,6 @@ enum class GameResult {
     FAILED,
     ABANDONED,
 }
+
+/** Lives in a game played with lives: the third mistake ends the game. */
+const val DEFAULT_LIVES = 3

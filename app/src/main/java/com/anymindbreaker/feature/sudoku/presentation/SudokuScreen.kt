@@ -28,6 +28,7 @@ import com.anymindbreaker.core.ui.components.GameResultContent
 import com.anymindbreaker.core.ui.components.GameScaffold
 import com.anymindbreaker.core.ui.components.GameSetupColumn
 import com.anymindbreaker.core.ui.components.GameStatusHeader
+import com.anymindbreaker.core.ui.components.LivesSwitchCard
 import com.anymindbreaker.core.ui.components.LoadingContent
 import com.anymindbreaker.core.ui.components.PHASE_FADE_MILLIS
 import com.anymindbreaker.core.ui.components.ResumeGameDialog
@@ -102,6 +103,10 @@ fun SudokuScreen(
                     DifficultyGroup(
                         selected = uiState.difficulty,
                         onSelect = viewModel::onDifficultySelected,
+                    )
+                    LivesSwitchCard(
+                        enabled = uiState.livesEnabled,
+                        onEnabledChange = viewModel::onLivesEnabledChanged,
                     )
                     SwitchCard(
                         title = stringResource(R.string.sudoku_instant_check),
@@ -190,11 +195,10 @@ private fun SudokuPlay(
                 )
             }
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(Spacing.sm))
         SudokuNumberPad(
-            values = state.values,
+            state = state,
             onDigit = { onAction(SudokuAction.InputDigit(it)) },
         )
-        Spacer(Modifier.height(Spacing.lg))
     }
 }

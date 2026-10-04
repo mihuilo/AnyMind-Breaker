@@ -40,8 +40,10 @@ private fun session(
     score: Int = 100,
     language: Language? = if (type == GameType.CRYPTOGRAM) Language.RU else null,
     difficulty: Difficulty = Difficulty.NORMAL,
-    finishedAt: Long = (nextId + 1) * 1000L,
+    finishedAt: Long? = (nextId + 1) * 1000L,
+    livesEnabled: Boolean = true,
 ) = GameSession(
+    livesEnabled = livesEnabled,
     sessionId = "s${nextId++}",
     gameType = type,
     puzzleId = "p",
@@ -150,6 +152,43 @@ class StatisticsCalculatorTest {
         assertEquals(3, highlights.bestStreak)
         // The abandoned game does not break the current run.
         assertEquals(2, highlights.currentStreak)
+    }
+
+    @Test
+    fun gameWithoutLivesResetsTheStreakAndDoesNotCountTowardsIt() {
+        val sessions = listOf(
+            session(finishedAt = 1),
+            session(finishedAt = 2),
+            session(finishedAt = 3),
+            // Won, but without lives.
+            session(finishedAt = 4, livesEnabled = false),
+            session(finishedAt = 5),
+        )
+        val highlights = StatisticsCalculator.highlights(sessions, 0)
+        assertEquals(1, highlights.currentStreak)
+        // The record set before stays.
+        assertEquals(3, highlights.bestStreak)
+        // It is still a win.
+        assertEquals(5, highlights.wins)
+    }
+
+    @Test
+    fun startingGameWithoutLivesAlreadyResetsTheStreak() {
+        val finished = listOf(session(finishedAt = 1_000), session(finishedAt = 2_000))
+        fun unfinished(livesEnabled: Boolean) = session(
+            result = GameResult.IN_PROGRESS,
+            finishedAt = null,
+            livesEnabled = livesEnabled,
+        ).copy(startedAt = 3_000)
+
+        val withLives = StatisticsCalculator.highlights(finished, 0, listOf(unfinished(livesEnabled = true)))
+        assertEquals(2, withLives.currentStreak)
+
+        val withoutLives = StatisticsCalculator.highlights(finished, 0, listOf(unfinished(livesEnabled = false)))
+        assertEquals(0, withoutLives.currentStreak)
+        assertEquals(2, withoutLives.bestStreak)
+        // A game in progress is not counted as played.
+        assertEquals(2, withoutLives.wins)
     }
 
     @Test
@@ -306,6 +345,22 @@ class StatisticsViewModelTest {
         val sudoku = viewModel.uiState.first { it.filter.gameType == GameType.SUDOKU }
         assertEquals(StatisticsFilter(GameType.SUDOKU), sudoku.filter)
         assertEquals(0, sudoku.highlights.wins)
+    }
+
+    @Test
+    fun unfinishedGameWithoutLivesResetsTheShownStreak() = runTest(dispatcher) {
+        val repository = InMemoryGameRepository()
+        repository.finishSession(session(GameType.SUDOKU, finishedAt = 10))
+        repository.finishSession(session(GameType.SUDOKU, finishedAt = 20))
+        val viewModel = StatisticsViewModel(repository, dispatcher)
+        viewModel.onGameSelected(GameType.SUDOKU)
+        assertEquals(2, viewModel.uiState.first { !it.loading }.highlights.currentStreak)
+
+        val started = session(GameType.SUDOKU, result = GameResult.IN_PROGRESS, finishedAt = null, livesEnabled = false)
+        repository.saveProgress(started.copy(startedAt = 30), "payload", updatedAt = 30)
+
+        val highlights = viewModel.uiState.first { it.highlights.currentStreak == 0 }.highlights
+        assertEquals(2, highlights.bestStreak)
     }
 
     @Test

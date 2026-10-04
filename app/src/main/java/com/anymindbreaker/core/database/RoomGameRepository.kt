@@ -63,6 +63,7 @@ private fun GameSession.toEntity() = GameSessionEntity(
     entries = entries,
     score = score,
     result = result.name,
+    livesEnabled = livesEnabled,
 )
 
 private fun GameSessionEntity.toModel() = GameSession(
@@ -79,6 +80,7 @@ private fun GameSessionEntity.toModel() = GameSession(
     entries = entries,
     score = score,
     result = GameResult.valueOf(result),
+    livesEnabled = livesEnabled,
 )
 
 private fun UserStatistics.toEntity() = UserStatisticsEntity(

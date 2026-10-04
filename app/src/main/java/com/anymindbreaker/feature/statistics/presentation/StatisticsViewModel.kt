@@ -42,12 +42,17 @@ class StatisticsViewModel(
     private val filter = MutableStateFlow(StatisticsFilter(GameType.entries.first()))
 
     val uiState: StateFlow<StatisticsUiState> =
-        combine(repository.observeFinishedSessions(), filter) { sessions, filter ->
+        combine(
+            repository.observeFinishedSessions(),
+            repository.observeSavedGames(),
+            filter,
+        ) { sessions, saved, filter ->
             val selected = sessions.filter(filter::matches)
+            val unfinished = saved.map { it.session }.filter(filter::matches)
             StatisticsUiState(
                 loading = false,
                 filter = filter,
-                highlights = StatisticsCalculator.highlights(selected, now() - RECENT_PERIOD_MILLIS),
+                highlights = StatisticsCalculator.highlights(selected, now() - RECENT_PERIOD_MILLIS, unfinished),
                 summary = StatisticsCalculator.summarize(selected),
                 history = sessions.take(HISTORY_LIMIT),
                 achievements = StatisticsCalculator.achievements(sessions),

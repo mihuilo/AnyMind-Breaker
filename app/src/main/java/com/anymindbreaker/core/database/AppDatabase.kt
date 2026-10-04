@@ -1,5 +1,6 @@
 package com.anymindbreaker.core.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -8,6 +9,8 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
 import androidx.room.Upsert
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 /** Enum values are stored by name so the tables stay readable and need no converters. */
@@ -26,6 +29,7 @@ data class GameSessionEntity(
     val entries: Int,
     val score: Int,
     val result: String,
+    @ColumnInfo(defaultValue = "1") val livesEnabled: Boolean = true,
 )
 
 /** At most one unfinished game per game type. */
@@ -122,9 +126,20 @@ interface GameDao {
 
 @Database(
     entities = [GameSessionEntity::class, SavedGameEntity::class, UserStatisticsEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
+
+    companion object {
+        /** Adds the "played with lives" flag; games recorded before it existed count as played with lives. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE game_session ADD COLUMN livesEnabled INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
+        val MIGRATIONS = arrayOf(MIGRATION_1_2)
+    }
 }

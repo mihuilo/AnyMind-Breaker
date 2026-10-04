@@ -171,8 +171,8 @@ class SudokuGameTest {
         solution = KNOWN_SOLUTION.toList(),
     )
 
-    private fun game(mode: SudokuCheckMode = SudokuCheckMode.INSTANT) =
-        SudokuGame(puzzle, mode, DefaultScoreCalculator()).also { it.start() }
+    private fun game(mode: SudokuCheckMode = SudokuCheckMode.INSTANT, lives: Int? = null) =
+        SudokuGame(puzzle, mode, lives, DefaultScoreCalculator()).also { it.start() }
 
     private fun SudokuGame.enter(cell: Int, digit: Int) {
         handleAction(SudokuAction.SelectCell(cell))
@@ -331,5 +331,73 @@ class SudokuGameTest {
         }
         assertTrue(hinted.isFinished())
         assertTrue(hinted.calculateScore() < clean.calculateScore())
+    }
+
+    @Test
+    fun thirdMistakeLosesTheGameWhenPlayingWithLives() {
+        val game = game(lives = 3)
+        game.enter(2, 1)
+        game.enter(2, 2)
+        assertEquals(1, game.getState().livesLeft)
+        assertFalse(game.isFinished())
+
+        game.enter(2, 3)
+        assertEquals(0, game.getState().livesLeft)
+        assertEquals(3, game.getState().mistakes)
+        assertEquals(GameResult.FAILED, game.getState().result)
+        assertEquals(0, game.calculateScore())
+
+        // A lost game no longer accepts moves.
+        game.enter(2, 4)
+        assertEquals(3, game.getState().values[2])
+    }
+
+    @Test
+    fun correctDigitsDoNotSpendLives() {
+        val game = game(lives = 3)
+        game.solveAllExcept()
+        assertEquals(3, game.getState().livesLeft)
+        assertEquals(GameResult.COMPLETED, game.getState().result)
+    }
+
+    @Test
+    fun mistakesAreUnlimitedWithoutLives() {
+        val game = game()
+        repeat(6) { game.enter(2, if (it % 2 == 0) 1 else 2) }
+        assertEquals(6, game.getState().mistakes)
+        assertNull(game.getState().livesLeft)
+        assertFalse(game.isFinished())
+    }
+
+    @Test
+    fun classicCheckSpendsOneLifePerWrongCell() {
+        val game = game(SudokuCheckMode.CLASSIC, lives = 3)
+        game.enter(2, 1)
+        game.enter(3, 1)
+        assertEquals(3, game.getState().livesLeft)
+
+        game.handleAction(SudokuAction.Check)
+        assertEquals(1, game.getState().livesLeft)
+        assertFalse(game.isFinished())
+
+        game.enter(5, 1)
+        game.handleAction(SudokuAction.Check)
+        assertEquals(0, game.getState().livesLeft)
+        assertEquals(GameResult.FAILED, game.getState().result)
+    }
+
+    @Test
+    fun remainingShowsHowManyCellsEachDigitStillNeeds() {
+        val game = game()
+        for (digit in 1..9) {
+            assertEquals(9 - KNOWN_PUZZLE.count { it == digit }, game.getState().remaining(digit))
+        }
+
+        val before = game.getState().remaining(4)
+        game.enter(2, 4)
+        assertEquals(before - 1, game.getState().remaining(4))
+
+        game.solveAllExcept()
+        assertTrue((1..9).all { game.getState().remaining(it) == 0 })
     }
 }

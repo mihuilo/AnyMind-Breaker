@@ -48,13 +48,13 @@
     <string name="result_hints">Hints</string>
     <string name="puzzle_language_title">Puzzle language</string>
     <string name="game_lives">Play with lives</string>
-    <string name="game_lives_description">The game ends when all lives are spent on mistakes</string>
+    <string name="game_lives_description">Three lives: the third mistake ends the game</string>
     <string name="game_lives_count">♥ %1$d</string>
     <string name="cryptogram_table_title">Correspondence table</string>
     <string name="hint_letter">Letter</string>
     <string name="hint_word">Word</string>
     <string name="hint_position">Position</string>
-    <string name="result_failed">Game over</string>
+    <string name="result_failed">You lost</string>
     <string name="action_change_settings">Change settings</string>
     <string name="resume_title">Continue the game?</string>
     <string name="resume_text">You have an unfinished game.</string>
@@ -114,4 +114,5 @@
     <string name="statistics_details">Details</string>
     <string name="statistics_play_time">Time played</string>
     <string name="hours_minutes">%1$d h %2$d min</string>
+    <string name="game_lives_off_description">Mistakes are not limited. The win streak will be reset</string>
 </resources>

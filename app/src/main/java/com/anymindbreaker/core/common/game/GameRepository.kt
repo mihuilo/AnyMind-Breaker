@@ -24,12 +24,16 @@ data class UserStatistics(
     val currentStreak: Int = 0,
     val bestStreak: Int = 0,
 ) {
-    /** Totals after one more finished session. A win extends the streak and a loss resets it. */
+    /**
+     * Totals after one more finished session. A win extends the streak and a loss resets it.
+     * A game played without lives resets the streak whatever its result.
+     */
     fun afterSession(session: GameSession): UserStatistics {
-        val streak = when (session.result) {
-            GameResult.COMPLETED -> currentStreak + 1
-            GameResult.FAILED -> 0
-            GameResult.ABANDONED, GameResult.IN_PROGRESS -> currentStreak
+        val streak = when {
+            !session.livesEnabled -> 0
+            session.result == GameResult.COMPLETED -> currentStreak + 1
+            session.result == GameResult.FAILED -> 0
+            else -> currentStreak
         }
         return copy(
             totalGames = totalGames + 1,

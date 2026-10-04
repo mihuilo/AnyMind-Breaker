@@ -1,6 +1,7 @@
 package com.anymindbreaker.feature.sudoku.presentation
 
 import androidx.lifecycle.viewModelScope
+import com.anymindbreaker.core.common.game.DEFAULT_LIVES
 import com.anymindbreaker.core.common.game.DefaultScoreCalculator
 import com.anymindbreaker.core.common.game.Difficulty
 import com.anymindbreaker.core.common.game.GamePhase
@@ -37,6 +38,7 @@ data class SudokuUiState(
     val phase: GamePhase = GamePhase.SETUP,
     val difficulty: Difficulty = Difficulty.EASY,
     val instantCheck: Boolean = true,
+    val livesEnabled: Boolean = true,
     val game: SudokuState? = null,
     val score: Int = 0,
 )
@@ -79,6 +81,10 @@ class SudokuViewModel(
         viewModelScope.launch { settings.update { it.copy(instantSudokuValidation = enabled) } }
     }
 
+    fun onLivesEnabledChanged(enabled: Boolean) {
+        _uiState.update { it.copy(livesEnabled = enabled) }
+    }
+
     fun onStartGame() {
         val setup = _uiState.value
         if (setup.phase == GamePhase.LOADING) return
@@ -90,7 +96,8 @@ class SudokuViewModel(
             }
             val mode = if (setup.instantCheck) SudokuCheckMode.INSTANT else SudokuCheckMode.CLASSIC
             puzzle = newPuzzle
-            startNewGame(SudokuGame(newPuzzle, mode, scoreCalculator).also { it.start() }, newPuzzle)
+            val lives = if (setup.livesEnabled) DEFAULT_LIVES else null
+            startNewGame(SudokuGame(newPuzzle, mode, lives, scoreCalculator).also { it.start() }, newPuzzle)
         }
     }
 
@@ -114,8 +121,9 @@ class SudokuViewModel(
             it.copy(
                 difficulty = saved.puzzle.difficulty,
                 instantCheck = saved.state.checkMode == SudokuCheckMode.INSTANT,
+                livesEnabled = saved.state.livesLeft != null,
             )
         }
-        return SudokuGame(saved.puzzle, saved.state.checkMode, scoreCalculator, saved.state)
+        return SudokuGame(saved.puzzle, saved.state.checkMode, saved.state.livesLeft, scoreCalculator, saved.state)
     }
 }

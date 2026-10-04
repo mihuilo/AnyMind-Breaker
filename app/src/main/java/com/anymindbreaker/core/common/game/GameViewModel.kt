@@ -82,6 +82,7 @@ abstract class GameViewModel<S : GameState, A : GameAction>(
             language = puzzle.language,
             difficulty = puzzle.difficulty,
             startedAt = clock(),
+            livesEnabled = newGame.getState().livesLeft != null,
         )
         _savedGameAvailable.value = false
         val now = clock()

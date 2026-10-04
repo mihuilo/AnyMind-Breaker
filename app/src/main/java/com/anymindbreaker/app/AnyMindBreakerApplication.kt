@@ -45,7 +45,9 @@ class AppContainer(context: Context) {
     )
 
     private val database: AppDatabase by lazy {
-        Room.databaseBuilder(appContext, AppDatabase::class.java, "any_mind_breaker.db").build()
+        Room.databaseBuilder(appContext, AppDatabase::class.java, "any_mind_breaker.db")
+            .addMigrations(*AppDatabase.MIGRATIONS)
+            .build()
     }
 
     val gameRepository: GameRepository by lazy { RoomGameRepository(database.gameDao()) }

@@ -1,6 +1,7 @@
 package com.anymindbreaker.feature.cryptogram.presentation
 
 import androidx.lifecycle.viewModelScope
+import com.anymindbreaker.core.common.game.DEFAULT_LIVES
 import com.anymindbreaker.core.common.game.Difficulty
 import com.anymindbreaker.core.common.game.GamePhase
 import com.anymindbreaker.core.common.game.GameRepository
@@ -18,6 +19,7 @@ import com.anymindbreaker.feature.cryptogram.domain.CryptogramGame
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramGenerator
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramPuzzle
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramState
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,13 +32,12 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import kotlin.random.Random
 
 data class CryptogramUiState(
     val phase: GamePhase = GamePhase.SETUP,
     val difficulty: Difficulty = Difficulty.EASY,
     val language: Language = Language.RU,
-    val livesEnabled: Boolean = false,
+    val livesEnabled: Boolean = true,
     /** Language of the puzzle being played; the setup choice may change while it is on screen. */
     val gameLanguage: Language = Language.RU,
     val game: CryptogramState? = null,
@@ -110,7 +111,7 @@ class CryptogramViewModel(
                 difficulty = setup.difficulty,
                 createdAt = System.currentTimeMillis(),
             )
-            val newLives = if (setup.livesEnabled) livesFor(setup.difficulty) else null
+            val newLives = if (setup.livesEnabled) DEFAULT_LIVES else null
             puzzle = newPuzzle
             lives = newLives
             _uiState.update { it.copy(gameLanguage = setup.language) }
@@ -145,11 +146,5 @@ class CryptogramViewModel(
             )
         }
         return CryptogramGame(saved.puzzle, saved.lives, scoreCalculator, saved.state)
-    }
-
-    private fun livesFor(difficulty: Difficulty): Int = when (difficulty) {
-        Difficulty.EASY -> 5
-        Difficulty.NORMAL -> 4
-        Difficulty.HARD, Difficulty.EXPERT -> 3
     }
 }

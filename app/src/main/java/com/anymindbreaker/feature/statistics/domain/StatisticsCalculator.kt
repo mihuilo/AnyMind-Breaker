@@ -82,12 +82,19 @@ object StatisticsCalculator {
         )
     }
 
-    /** [recentSinceMillis] marks the start of the period whose wins are reported as a gain. */
-    fun highlights(sessions: List<GameSession>, recentSinceMillis: Long): Highlights {
+    /**
+     * [recentSinceMillis] marks the start of the period whose wins are reported as a gain.
+     * [unfinished] are games still in progress: one started without lives already breaks the streak.
+     */
+    fun highlights(
+        sessions: List<GameSession>,
+        recentSinceMillis: Long,
+        unfinished: List<GameSession> = emptyList(),
+    ): Highlights {
         val solved = sessions.filter { it.result == GameResult.COMPLETED }
         val flawless = solved.filter { it.mistakes == 0 }
         fun List<GameSession>.recent() = count { (it.finishedAt ?: 0) >= recentSinceMillis }
-        val (currentStreak, bestStreak) = streaks(sessions)
+        val (currentStreak, bestStreak) = streaks(sessions + unfinished)
         return Highlights(
             wins = solved.size,
             recentWins = solved.recent(),
@@ -132,17 +139,18 @@ object StatisticsCalculator {
     }
 
     /**
-     * Current and longest run of solved games, in the order they were finished.
-     * An abandoned game does not break a run, a lost one does.
+     * Current and longest run of solved games, in the order they were played.
+     * An abandoned game does not break a run, a lost one does. A game played without lives
+     * breaks the run as soon as it is started and never counts towards one.
      */
     private fun streaks(sessions: List<GameSession>): Pair<Int, Int> {
         var best = 0
         var current = 0
-        for (session in sessions.sortedBy { it.finishedAt ?: 0 }) {
-            when (session.result) {
-                GameResult.COMPLETED -> current++
-                GameResult.FAILED -> current = 0
-                GameResult.ABANDONED, GameResult.IN_PROGRESS -> Unit
+        for (session in sessions.sortedBy { it.finishedAt ?: it.startedAt }) {
+            when {
+                !session.livesEnabled -> current = 0
+                session.result == GameResult.COMPLETED -> current++
+                session.result == GameResult.FAILED -> current = 0
             }
             best = maxOf(best, current)
         }

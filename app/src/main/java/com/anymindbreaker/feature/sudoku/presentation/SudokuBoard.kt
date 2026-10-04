@@ -6,11 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -158,41 +161,55 @@ private fun SudokuCell(
     }
 }
 
-/** Digits 1–9. A digit that is already placed nine times is dimmed and disabled. */
+/**
+ * Digits 1–9 with the number of cells each digit still has to fill underneath.
+ * A digit that is already placed nine times disappears and leaves its place empty.
+ */
 @Composable
 fun SudokuNumberPad(
-    values: List<Int>,
+    state: SudokuState,
     onDigit: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .height(72.dp),
         horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         for (digit in 1..SIZE) {
-            val exhausted = values.count { it == digit } >= SIZE
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .clickable(enabled = !exhausted) { onDigit(digit) }
-                    .testTag("sudoku_digit_$digit"),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = digit.toString(),
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (exhausted) {
-                        MaterialTheme.colorScheme.outlineVariant
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                )
+            val remaining = state.remaining(digit)
+            if (remaining == 0) {
+                Spacer(Modifier.weight(1f))
+            } else {
+                Surface(
+                    onClick = { onDigit(digit) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(vertical = 2.dp)
+                        .testTag("sudoku_digit_$digit"),
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    shadowElevation = 2.dp,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = digit.toString(),
+                            fontSize = 28.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = remaining.toString(),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("sudoku_digit_${digit}_remaining"),
+                        )
+                    }
+                }
             }
         }
     }

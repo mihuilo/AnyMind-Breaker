@@ -73,6 +73,17 @@ class UserStatisticsTest {
     }
 
     @Test
+    fun gameWithoutLivesResetsStreakEvenWhenWon() {
+        var stats = UserStatistics()
+        repeat(3) { stats = stats.afterSession(session(GameResult.COMPLETED)) }
+
+        stats = stats.afterSession(session(GameResult.COMPLETED).copy(livesEnabled = false))
+        assertEquals(0, stats.currentStreak)
+        assertEquals(3, stats.bestStreak)
+        assertEquals(4, stats.completedGames)
+    }
+
+    @Test
     fun abandonedGameKeepsStreak() {
         val stats = UserStatistics()
             .afterSession(session(GameResult.COMPLETED))
@@ -137,6 +148,26 @@ class GamePersistenceTest {
         second.enter(next, solution[next])
         assertEquals(0, checkNotNull(second.uiState.value.game).mistakes)
         assertEquals(saved.session.sessionId, checkNotNull(repository.savedGame(GameType.SUDOKU)).session.sessionId)
+    }
+
+    @Test
+    fun livesAreOnByDefaultAndTheChoiceIsRecordedInTheSession() = runTest(dispatcher) {
+        val withLives = sudokuViewModel()
+        assertTrue(withLives.uiState.value.livesEnabled)
+        withLives.onStartGame()
+        assertEquals(DEFAULT_LIVES, checkNotNull(withLives.uiState.value.game).livesLeft)
+        assertTrue(checkNotNull(repository.savedGame(GameType.SUDOKU)).session.livesEnabled)
+
+        val withoutLives = sudokuViewModel()
+        withoutLives.onDismissSavedGame()
+        withoutLives.onLivesEnabledChanged(false)
+        withoutLives.onStartGame()
+        assertNull(checkNotNull(withoutLives.uiState.value.game).livesLeft)
+        assertFalse(checkNotNull(repository.savedGame(GameType.SUDOKU)).session.livesEnabled)
+
+        // The choice survives saving and resuming.
+        withoutLives.onScreenVisibilityChanged(false)
+        assertFalse(sudokuViewModel(resume = true).uiState.value.livesEnabled)
     }
 
     @Test

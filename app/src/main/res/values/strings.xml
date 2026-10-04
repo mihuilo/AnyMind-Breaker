@@ -52,13 +52,13 @@
     <string name="language_en" translatable="false">English</string>
     <string name="puzzle_language_title">Язык головоломки</string>
     <string name="game_lives">Играть с жизнями</string>
-    <string name="game_lives_description">Игра заканчивается, когда жизни потрачены на ошибки</string>
+    <string name="game_lives_description">Три жизни: третья ошибка заканчивает игру</string>
     <string name="game_lives_count">♥ %1$d</string>
     <string name="cryptogram_table_title">Таблица соответствий</string>
     <string name="hint_letter">Буква</string>
     <string name="hint_word">Слово</string>
     <string name="hint_position">Позиция</string>
-    <string name="result_failed">Игра окончена</string>
+    <string name="result_failed">Вы проиграли</string>
     <string name="action_change_settings">Изменить настройки</string>
     <string name="resume_title">Продолжить игру?</string>
     <string name="resume_text">У вас есть незавершённая игра.</string>
@@ -118,4 +118,5 @@
     <string name="statistics_details">Подробнее</string>
     <string name="statistics_play_time">Время в игре</string>
     <string name="hours_minutes">%1$d ч %2$d мин</string>
+    <string name="game_lives_off_description">Ошибки не ограничены. Серия побед будет обнулена</string>
 </resources>

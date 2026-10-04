@@ -227,6 +227,24 @@ fun SwitchCard(
     }
 }
 
+/** Lives are on by default. They can be turned off, at the cost of the win streak. */
+@Composable
+fun LivesSwitchCard(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SwitchCard(
+        title = stringResource(R.string.game_lives),
+        description = stringResource(
+            if (enabled) R.string.game_lives_description else R.string.game_lives_off_description,
+        ),
+        checked = enabled,
+        onCheckedChange = onEnabledChange,
+        modifier = modifier.testTag("game_lives"),
+    )
+}
+
 /** Timer on its own line, with difficulty on the left and mistakes and lives on the right below it. */
 @Composable
 fun GameStatusHeader(

@@ -33,11 +33,11 @@ import com.anymindbreaker.core.ui.components.GameResultContent
 import com.anymindbreaker.core.ui.components.GameScaffold
 import com.anymindbreaker.core.ui.components.GameSetupColumn
 import com.anymindbreaker.core.ui.components.GameStatusHeader
+import com.anymindbreaker.core.ui.components.LivesSwitchCard
 import com.anymindbreaker.core.ui.components.LoadingContent
 import com.anymindbreaker.core.ui.components.OptionGroup
 import com.anymindbreaker.core.ui.components.PHASE_FADE_MILLIS
 import com.anymindbreaker.core.ui.components.ResumeGameDialog
-import com.anymindbreaker.core.ui.components.SwitchCard
 import com.anymindbreaker.core.ui.components.accuracyPercent
 import com.anymindbreaker.core.ui.components.labelRes
 import com.anymindbreaker.core.ui.feedback.GameFeedback
@@ -117,11 +117,9 @@ fun CryptogramScreen(
                         selected = uiState.difficulty,
                         onSelect = viewModel::onDifficultySelected,
                     )
-                    SwitchCard(
-                        title = stringResource(R.string.game_lives),
-                        description = stringResource(R.string.game_lives_description),
-                        checked = uiState.livesEnabled,
-                        onCheckedChange = viewModel::onLivesEnabledChanged,
+                    LivesSwitchCard(
+                        enabled = uiState.livesEnabled,
+                        onEnabledChange = viewModel::onLivesEnabledChanged,
                     )
                 }
                 phase == GamePhase.FINISHED && game != null -> GameResultContent(

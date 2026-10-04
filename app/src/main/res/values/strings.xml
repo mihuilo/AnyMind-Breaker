@@ -79,21 +79,17 @@
     <string name="settings_reset_text">История игр, статистика и незавершённые игры будут удалены. Отменить это нельзя.</string>
     <string name="settings_reset_confirm">Сбросить</string>
     <string name="action_cancel">Отмена</string>
-    <string name="statistics_tab_general">Общая</string>
-    <string name="statistics_tab_games">По играм</string>
-    <string name="statistics_tab_languages">По языкам</string>
     <string name="statistics_tab_history">История</string>
     <string name="statistics_tab_achievements">Достижения</string>
     <string name="statistics_empty">Пока нет сыгранных игр</string>
     <string name="statistics_played">Сыграно игр</string>
-    <string name="statistics_completed">Решено</string>
     <string name="statistics_failed">Проиграно</string>
     <string name="statistics_success_rate">Успешных решений</string>
     <string name="statistics_average_time">Среднее время</string>
     <string name="statistics_best_time">Лучшее время</string>
     <string name="statistics_score">Очки</string>
     <string name="statistics_current_streak">Текущая серия</string>
-    <string name="statistics_best_streak">Максимальная серия</string>
+    <string name="statistics_best_streak">Лучшая серия побед</string>
     <string name="result_label_completed">Решено</string>
     <string name="result_label_failed">Проиграно</string>
     <string name="result_label_abandoned">Не закончено</string>
@@ -112,4 +108,14 @@
     <string name="cell_empty">пусто</string>
     <string name="sudoku_cell_description">Строка %1$d, столбец %2$d: %3$s</string>
     <string name="cryptogram_cell_description">Число %1$d, ответ: %2$s</string>
+    <string name="statistics_all">Все</string>
+    <string name="statistics_all_languages">Все языки</string>
+    <string name="statistics_wins">Выиграно игр</string>
+    <string name="statistics_flawless_wins">Победы без ошибок</string>
+    <string name="statistics_gain_value">+%1$d</string>
+    <string name="statistics_gain_description">Прирост за 7 дней</string>
+    <string name="statistics_gain_caption">Зелёным показан прирост за последние 7 дней</string>
+    <string name="statistics_details">Подробнее</string>
+    <string name="statistics_play_time">Время в игре</string>
+    <string name="hours_minutes">%1$d ч %2$d мин</string>
 </resources>

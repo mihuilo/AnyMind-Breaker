@@ -75,21 +75,17 @@
     <string name="settings_reset_text">Game history, statistics and unfinished games will be deleted. This cannot be undone.</string>
     <string name="settings_reset_confirm">Reset</string>
     <string name="action_cancel">Cancel</string>
-    <string name="statistics_tab_general">General</string>
-    <string name="statistics_tab_games">By game</string>
-    <string name="statistics_tab_languages">By language</string>
     <string name="statistics_tab_history">History</string>
     <string name="statistics_tab_achievements">Achievements</string>
     <string name="statistics_empty">No games played yet</string>
     <string name="statistics_played">Games played</string>
-    <string name="statistics_completed">Solved</string>
     <string name="statistics_failed">Lost</string>
     <string name="statistics_success_rate">Success rate</string>
     <string name="statistics_average_time">Average time</string>
     <string name="statistics_best_time">Best time</string>
     <string name="statistics_score">Score</string>
     <string name="statistics_current_streak">Current streak</string>
-    <string name="statistics_best_streak">Best streak</string>
+    <string name="statistics_best_streak">Best win streak</string>
     <string name="result_label_completed">Solved</string>
     <string name="result_label_failed">Lost</string>
     <string name="result_label_abandoned">Not finished</string>
@@ -108,4 +104,14 @@
     <string name="cell_empty">empty</string>
     <string name="sudoku_cell_description">Row %1$d, column %2$d: %3$s</string>
     <string name="cryptogram_cell_description">Number %1$d, answer: %2$s</string>
+    <string name="statistics_all">All</string>
+    <string name="statistics_all_languages">All languages</string>
+    <string name="statistics_wins">Games won</string>
+    <string name="statistics_flawless_wins">Wins without mistakes</string>
+    <string name="statistics_gain_value">+%1$d</string>
+    <string name="statistics_gain_description">Gain over 7 days</string>
+    <string name="statistics_gain_caption">Green shows the gain over the last 7 days</string>
+    <string name="statistics_details">Details</string>
+    <string name="statistics_play_time">Time played</string>
+    <string name="hours_minutes">%1$d h %2$d min</string>
 </resources>

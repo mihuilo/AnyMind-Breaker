@@ -41,7 +41,7 @@ class NavigationTest {
         composeRule.onNodeWithTag("game_card_CRYPTOGRAM").assertIsDisplayed()
 
         composeRule.onNodeWithTag("nav_STATISTICS").performClick()
-        composeRule.onNodeWithTag("statistics_tab_GENERAL").assertIsDisplayed()
+        composeRule.onNodeWithTag("statistics_tab_SUDOKU").assertIsDisplayed()
 
         composeRule.onNodeWithTag("nav_SETTINGS").performClick()
         waitForTag("settings_sound")

@@ -6,11 +6,12 @@ import com.anymindbreaker.core.common.game.GameSession
 import com.anymindbreaker.core.common.game.GameType
 import com.anymindbreaker.core.common.game.InMemoryGameRepository
 import com.anymindbreaker.core.common.game.Language
-import com.anymindbreaker.core.common.game.UserStatistics
 import com.anymindbreaker.feature.home.presentation.HomeViewModel
 import com.anymindbreaker.feature.statistics.domain.Achievement
 import com.anymindbreaker.feature.statistics.domain.GameSummary
+import com.anymindbreaker.feature.statistics.domain.Highlights
 import com.anymindbreaker.feature.statistics.domain.StatisticsCalculator
+import com.anymindbreaker.feature.statistics.domain.StatisticsFilter
 import com.anymindbreaker.feature.statistics.presentation.StatisticsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,13 +39,14 @@ private fun session(
     entries: Int = 10,
     score: Int = 100,
     language: Language? = if (type == GameType.CRYPTOGRAM) Language.RU else null,
+    difficulty: Difficulty = Difficulty.NORMAL,
     finishedAt: Long = (nextId + 1) * 1000L,
 ) = GameSession(
     sessionId = "s${nextId++}",
     gameType = type,
     puzzleId = "p",
     language = language,
-    difficulty = Difficulty.NORMAL,
+    difficulty = difficulty,
     startedAt = 0,
     finishedAt = finishedAt,
     durationSeconds = seconds,
@@ -60,6 +62,7 @@ class StatisticsCalculatorTest {
     @Test
     fun emptyHistoryGivesEmptySummary() {
         assertEquals(GameSummary(), StatisticsCalculator.summarize(emptyList()))
+        assertEquals(Highlights(), StatisticsCalculator.highlights(emptyList(), recentSinceMillis = 0))
     }
 
     @Test
@@ -87,32 +90,86 @@ class StatisticsCalculatorTest {
 
     @Test
     fun unsolvedGamesHaveNoTimeStatistics() {
-        val summary = StatisticsCalculator.summarize(listOf(session(result = GameResult.FAILED, entries = 0)))
+        val sessions = listOf(session(result = GameResult.FAILED, entries = 0))
+        val summary = StatisticsCalculator.summarize(sessions)
         assertNull(summary.averageSeconds)
         assertNull(summary.bestSeconds)
         assertNull(summary.accuracyPercent)
         assertEquals(0, summary.successPercent)
+        assertNull(StatisticsCalculator.highlights(sessions, 0).bestSeconds)
     }
 
     @Test
-    fun overviewSplitsByGameAndLanguage() {
-        val sessions = listOf(
-            session(GameType.SUDOKU),
-            session(GameType.SUDOKU),
-            session(GameType.CRYPTOGRAM, language = Language.RU),
-            session(GameType.CRYPTOGRAM, language = Language.EN, mistakes = 5),
+    fun highlightsCountWinsFlawlessWinsAndBestTime() {
+        val highlights = StatisticsCalculator.highlights(
+            listOf(
+                session(seconds = 120, mistakes = 0),
+                session(seconds = 38, mistakes = 2),
+                session(seconds = 90, mistakes = 0),
+                session(result = GameResult.FAILED, seconds = 10, mistakes = 0),
+            ),
+            recentSinceMillis = 0,
         )
-        val overview = StatisticsCalculator.overview(sessions, UserStatistics(currentStreak = 4, bestStreak = 7))
+        assertEquals(3, highlights.wins)
+        // A lost game without mistakes is not a flawless win.
+        assertEquals(2, highlights.flawlessWins)
+        assertEquals(38L, highlights.bestSeconds)
+        assertEquals(258L, highlights.playSeconds)
+    }
 
-        assertEquals(4, overview.overall.played)
-        assertEquals(2, overview.byGame.getValue(GameType.SUDOKU).played)
-        assertEquals(2, overview.byGame.getValue(GameType.CRYPTOGRAM).played)
-        // Sudoku has no language, so it is not counted in either language.
-        assertEquals(1, overview.byLanguage.getValue(Language.RU).played)
-        assertEquals(1, overview.byLanguage.getValue(Language.EN).played)
-        assertEquals(5, overview.byLanguage.getValue(Language.EN).mistakes)
-        assertEquals(4, overview.currentStreak)
-        assertEquals(7, overview.bestStreak)
+    @Test
+    fun gainsOnlyCountRecentWins() {
+        val highlights = StatisticsCalculator.highlights(
+            listOf(
+                session(mistakes = 0, finishedAt = 100),
+                session(mistakes = 1, finishedAt = 5_000),
+                session(mistakes = 0, finishedAt = 6_000),
+                session(result = GameResult.FAILED, finishedAt = 7_000),
+            ),
+            recentSinceMillis = 1_000,
+        )
+        assertEquals(3, highlights.wins)
+        assertEquals(2, highlights.recentWins)
+        assertEquals(2, highlights.flawlessWins)
+        assertEquals(1, highlights.recentFlawlessWins)
+    }
+
+    @Test
+    fun streaksFollowTheOrderGamesWereFinished() {
+        // Given out of order on purpose: wins at 1–3, a loss at 4, wins at 5–6, an abandoned game at 7.
+        val sessions = listOf(
+            session(finishedAt = 5),
+            session(result = GameResult.FAILED, finishedAt = 4),
+            session(finishedAt = 1),
+            session(finishedAt = 2),
+            session(finishedAt = 3),
+            session(result = GameResult.ABANDONED, finishedAt = 7),
+            session(finishedAt = 6),
+        )
+        val highlights = StatisticsCalculator.highlights(sessions, 0)
+        assertEquals(3, highlights.bestStreak)
+        // The abandoned game does not break the current run.
+        assertEquals(2, highlights.currentStreak)
+    }
+
+    @Test
+    fun filterSelectsGameDifficultyAndLanguage() {
+        val sudokuHard = session(GameType.SUDOKU, difficulty = Difficulty.HARD)
+        val cryptoRu = session(GameType.CRYPTOGRAM, language = Language.RU, difficulty = Difficulty.EASY)
+        val cryptoEn = session(GameType.CRYPTOGRAM, language = Language.EN, difficulty = Difficulty.HARD)
+        val all = listOf(sudokuHard, cryptoRu, cryptoEn)
+
+        fun select(filter: StatisticsFilter) = all.filter(filter::matches)
+
+        assertEquals(listOf(sudokuHard), select(StatisticsFilter(GameType.SUDOKU)))
+        assertEquals(listOf(cryptoRu, cryptoEn), select(StatisticsFilter(GameType.CRYPTOGRAM)))
+        assertEquals(listOf(cryptoEn), select(StatisticsFilter(GameType.CRYPTOGRAM, Difficulty.HARD)))
+        assertEquals(listOf(cryptoRu), select(StatisticsFilter(GameType.CRYPTOGRAM, language = Language.RU)))
+        assertEquals(
+            emptyList<GameSession>(),
+            select(StatisticsFilter(GameType.CRYPTOGRAM, Difficulty.HARD, Language.RU)),
+        )
+        assertEquals(emptyList<GameSession>(), select(StatisticsFilter(GameType.SUDOKU, Difficulty.EASY)))
     }
 
     @Test
@@ -200,21 +257,69 @@ class StatisticsViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun statisticsFollowFinishedSessions() = runTest(dispatcher) {
+    fun statisticsFollowFinishedSessionsOfTheSelectedGame() = runTest(dispatcher) {
         val repository = InMemoryGameRepository()
-        val viewModel = StatisticsViewModel(repository, dispatcher)
+        val viewModel = StatisticsViewModel(repository, dispatcher, now = { 100_000 })
+        viewModel.onGameSelected(GameType.SUDOKU)
 
-        assertEquals(0, viewModel.uiState.first { !it.loading }.overview.overall.played)
+        assertEquals(0, viewModel.uiState.first { !it.loading }.highlights.wins)
 
         repository.finishSession(session(GameType.CRYPTOGRAM, seconds = 40, finishedAt = 10))
-        repository.finishSession(session(GameType.SUDOKU, result = GameResult.FAILED, finishedAt = 20))
+        repository.finishSession(session(GameType.SUDOKU, seconds = 200, finishedAt = 20))
+        repository.finishSession(session(GameType.SUDOKU, result = GameResult.FAILED, finishedAt = 30))
 
-        val state = viewModel.uiState.first { it.history.size == 2 }
-        assertEquals(1, state.overview.overall.completed)
-        assertEquals(0, state.overview.currentStreak)
-        assertEquals(1, state.overview.bestStreak)
-        assertEquals(GameType.SUDOKU, state.history.first().gameType)
-        assertTrue(Achievement.UNDER_A_MINUTE in state.achievements)
+        val sudoku = viewModel.uiState.first { it.history.size == 3 }
+        assertEquals(1, sudoku.highlights.wins)
+        assertEquals(1, sudoku.highlights.bestStreak)
+        assertEquals(0, sudoku.highlights.currentStreak)
+        assertEquals(200L, sudoku.highlights.bestSeconds)
+        assertEquals(2, sudoku.summary.played)
+        // History and achievements cover every game, whatever the filter.
+        assertEquals(GameType.SUDOKU, sudoku.history.first().gameType)
+        assertTrue(Achievement.UNDER_A_MINUTE in sudoku.achievements)
+
+        viewModel.onGameSelected(GameType.CRYPTOGRAM)
+        val cryptogram = viewModel.uiState.first { it.filter.gameType == GameType.CRYPTOGRAM }
+        assertEquals(1, cryptogram.highlights.wins)
+        assertEquals(40L, cryptogram.highlights.bestSeconds)
+    }
+
+    @Test
+    fun difficultyAndLanguageNarrowTheStatistics() = runTest(dispatcher) {
+        val repository = InMemoryGameRepository()
+        repository.finishSession(session(GameType.CRYPTOGRAM, language = Language.RU, difficulty = Difficulty.EASY))
+        repository.finishSession(session(GameType.CRYPTOGRAM, language = Language.EN, difficulty = Difficulty.EASY))
+        repository.finishSession(session(GameType.CRYPTOGRAM, language = Language.EN, difficulty = Difficulty.HARD))
+        val viewModel = StatisticsViewModel(repository, dispatcher)
+        viewModel.onGameSelected(GameType.CRYPTOGRAM)
+
+        assertEquals(3, viewModel.uiState.first { !it.loading }.highlights.wins)
+
+        viewModel.onDifficultySelected(Difficulty.EASY)
+        assertEquals(2, viewModel.uiState.first { it.filter.difficulty == Difficulty.EASY }.highlights.wins)
+
+        viewModel.onLanguageSelected(Language.EN)
+        assertEquals(1, viewModel.uiState.first { it.filter.language == Language.EN }.highlights.wins)
+
+        // Choosing another game clears the narrower filters.
+        viewModel.onGameSelected(GameType.SUDOKU)
+        val sudoku = viewModel.uiState.first { it.filter.gameType == GameType.SUDOKU }
+        assertEquals(StatisticsFilter(GameType.SUDOKU), sudoku.filter)
+        assertEquals(0, sudoku.highlights.wins)
+    }
+
+    @Test
+    fun gainCoversTheLastSevenDays() = runTest(dispatcher) {
+        val day = 24 * 60 * 60 * 1000L
+        val repository = InMemoryGameRepository()
+        repository.finishSession(session(GameType.SUDOKU, finishedAt = 2 * day))
+        repository.finishSession(session(GameType.SUDOKU, finishedAt = 9 * day))
+        val viewModel = StatisticsViewModel(repository, dispatcher, now = { 10 * day })
+        viewModel.onGameSelected(GameType.SUDOKU)
+
+        val highlights = viewModel.uiState.first { !it.loading }.highlights
+        assertEquals(2, highlights.wins)
+        assertEquals(1, highlights.recentWins)
     }
 
     @Test

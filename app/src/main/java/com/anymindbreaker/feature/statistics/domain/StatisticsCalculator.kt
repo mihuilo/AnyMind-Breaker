@@ -1,10 +1,10 @@
 package com.anymindbreaker.feature.statistics.domain
 
+import com.anymindbreaker.core.common.game.Difficulty
 import com.anymindbreaker.core.common.game.GameResult
 import com.anymindbreaker.core.common.game.GameSession
 import com.anymindbreaker.core.common.game.GameType
 import com.anymindbreaker.core.common.game.Language
-import com.anymindbreaker.core.common.game.UserStatistics
 
 /** Measurable facts about a set of finished games. Interpretation is left to the player. */
 data class GameSummary(
@@ -23,12 +23,30 @@ data class GameSummary(
     val accuracyPercent: Int? = null,
 )
 
-data class StatisticsOverview(
-    val overall: GameSummary = GameSummary(),
-    val byGame: Map<GameType, GameSummary> = emptyMap(),
-    val byLanguage: Map<Language, GameSummary> = emptyMap(),
+/** Which games the statistics screen is looking at. A null value means "any". */
+data class StatisticsFilter(
+    val gameType: GameType,
+    val difficulty: Difficulty? = null,
+    val language: Language? = null,
+) {
+    fun matches(session: GameSession): Boolean =
+        session.gameType == gameType &&
+            (difficulty == null || session.difficulty == difficulty) &&
+            (language == null || session.language == language)
+}
+
+/** The headline numbers of the statistics screen. */
+data class Highlights(
+    val wins: Int = 0,
+    /** Wins among the recent sessions, shown as a gain next to the total. */
+    val recentWins: Int = 0,
+    /** Games solved without a single mistake. */
+    val flawlessWins: Int = 0,
+    val recentFlawlessWins: Int = 0,
     val currentStreak: Int = 0,
     val bestStreak: Int = 0,
+    val bestSeconds: Long? = null,
+    val playSeconds: Long = 0,
 )
 
 data class TodaySummary(
@@ -64,14 +82,23 @@ object StatisticsCalculator {
         )
     }
 
-    /** [sessions] are finished sessions; streaks come from the aggregated totals. */
-    fun overview(sessions: List<GameSession>, totals: UserStatistics): StatisticsOverview = StatisticsOverview(
-        overall = summarize(sessions),
-        byGame = GameType.entries.associateWith { type -> summarize(sessions.filter { it.gameType == type }) },
-        byLanguage = Language.entries.associateWith { language -> summarize(sessions.filter { it.language == language }) },
-        currentStreak = totals.currentStreak,
-        bestStreak = totals.bestStreak,
-    )
+    /** [recentSinceMillis] marks the start of the period whose wins are reported as a gain. */
+    fun highlights(sessions: List<GameSession>, recentSinceMillis: Long): Highlights {
+        val solved = sessions.filter { it.result == GameResult.COMPLETED }
+        val flawless = solved.filter { it.mistakes == 0 }
+        fun List<GameSession>.recent() = count { (it.finishedAt ?: 0) >= recentSinceMillis }
+        val (currentStreak, bestStreak) = streaks(sessions)
+        return Highlights(
+            wins = solved.size,
+            recentWins = solved.recent(),
+            flawlessWins = flawless.size,
+            recentFlawlessWins = flawless.recent(),
+            currentStreak = currentStreak,
+            bestStreak = bestStreak,
+            bestSeconds = solved.minOfOrNull { it.durationSeconds },
+            playSeconds = sessions.sumOf { it.durationSeconds },
+        )
+    }
 
     fun today(sessions: List<GameSession>, startOfDayMillis: Long): TodaySummary {
         val today = sessions.filter { (it.finishedAt ?: 0) >= startOfDayMillis }
@@ -88,7 +115,9 @@ object StatisticsCalculator {
         if (solved.size >= 10) unlocked += Achievement.SOLVED_10
         if (solved.size >= 100) unlocked += Achievement.SOLVED_100
         if (solved.count { it.mistakes == 0 } >= 10) unlocked += Achievement.FLAWLESS_10
-        if (longestSudokuStreak(sessions) >= 10) unlocked += Achievement.SUDOKU_STREAK_10
+        if (streaks(sessions.filter { it.gameType == GameType.SUDOKU }).second >= 10) {
+            unlocked += Achievement.SUDOKU_STREAK_10
+        }
         if (solved.any { it.gameType == GameType.CRYPTOGRAM && it.hintsUsed == 0 }) {
             unlocked += Achievement.CRYPTOGRAM_NO_HINTS
         }
@@ -102,11 +131,14 @@ object StatisticsCalculator {
         return (entries - sessions.sumOf { it.mistakes }).coerceAtLeast(0) * 100 / entries
     }
 
-    /** Longest run of solved sudoku games; an abandoned game does not break the run, a lost one does. */
-    private fun longestSudokuStreak(sessions: List<GameSession>): Int {
+    /**
+     * Current and longest run of solved games, in the order they were finished.
+     * An abandoned game does not break a run, a lost one does.
+     */
+    private fun streaks(sessions: List<GameSession>): Pair<Int, Int> {
         var best = 0
         var current = 0
-        for (session in sessions.filter { it.gameType == GameType.SUDOKU }.sortedBy { it.finishedAt ?: 0 }) {
+        for (session in sessions.sortedBy { it.finishedAt ?: 0 }) {
             when (session.result) {
                 GameResult.COMPLETED -> current++
                 GameResult.FAILED -> current = 0
@@ -114,6 +146,6 @@ object StatisticsCalculator {
             }
             best = maxOf(best, current)
         }
-        return best
+        return current to best
     }
 }

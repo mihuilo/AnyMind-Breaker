@@ -17,7 +17,7 @@
     <string name="value_empty">—</string>
 
     <string name="game_cryptogram">Криптограмма</string>
-    <string name="game_cryptogram_description">Восстановите текст, заменив каждую букву шифра</string>
+    <string name="game_cryptogram_description">Восстановите текст: за каждым числом скрыта буква</string>
     <string name="game_sudoku">Судоку</string>
     <string name="game_sudoku_description">Классическое поле 9×9</string>
 
@@ -111,5 +111,5 @@
     <string name="action_view_statistics">Посмотреть статистику</string>
     <string name="cell_empty">пусто</string>
     <string name="sudoku_cell_description">Строка %1$d, столбец %2$d: %3$s</string>
-    <string name="cryptogram_cell_description">Буква шифра %1$s, ответ: %2$s</string>
+    <string name="cryptogram_cell_description">Число %1$d, ответ: %2$s</string>
 </resources>

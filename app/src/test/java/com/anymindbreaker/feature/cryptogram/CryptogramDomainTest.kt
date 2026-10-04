@@ -13,7 +13,8 @@ import com.anymindbreaker.feature.cryptogram.domain.CryptogramGenerator
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramHint
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramPuzzle
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramValidator
-import com.anymindbreaker.feature.cryptogram.domain.SubstitutionKey
+import com.anymindbreaker.feature.cryptogram.domain.NumberKey
+import com.anymindbreaker.feature.cryptogram.domain.cryptogramTemplate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -30,61 +31,75 @@ class CryptogramCipherTest {
 
     @Test
     fun alphabetsHaveExpectedSizeAndNoRepeats() {
-        assertEquals(32, ru.toSet().size)
-        assertEquals(32, ru.length)
+        assertEquals(33, ru.toSet().size)
+        assertEquals(33, ru.length)
         assertEquals(26, en.toSet().size)
         assertEquals(26, en.length)
     }
 
     @Test
-    fun normalizeUppercasesAndFoldsYo() {
-        assertEquals("ЕЛКА И ЕЖ", CryptogramAlphabet.normalize(" ёлка и Ёж ", Language.RU))
+    fun normalizeUppercasesAndKeepsYoAsItsOwnLetter() {
+        assertEquals("ЁЛКА И ЁЖ", CryptogramAlphabet.normalize(" ёлка и Ёж ", Language.RU))
         assertEquals("HELLO, WORLD", CryptogramAlphabet.normalize("Hello, World", Language.EN))
     }
 
     @Test
-    fun decryptRestoresEncryptedText() {
+    fun decodingRestoresEncodedText() {
         repeat(50) { seed ->
-            val key = SubstitutionKey.random(ru, Random(seed))
-            val text = "ВОЛШЕБНИК, СТРАННЫЙ КОТ — 42!"
-            assertEquals(text, key.decrypt(key.encrypt(text)))
-            assertEquals(text, key.encrypt(key.decrypt(text)))
+            val key = NumberKey.random(ru, Random(seed))
+            val text = "ВОЛШЕБНИК, СТРАННЫЙ КОТ И ЁЖ — 42!"
+            assertEquals(text, key.decode(key.encode(text), cryptogramTemplate(text, ru)))
         }
     }
 
     @Test
-    fun keyIsOneToOneAndHasNoFixedLetters() {
+    fun everyLetterGetsItsOwnNumberWithinAlphabetSize() {
         repeat(50) { seed ->
-            val key = SubstitutionKey.random(en, Random(seed))
-            val encrypted = en.map { checkNotNull(key.cipherOf(it)) }
-            assertEquals("different letters get different cipher letters", en.length, encrypted.toSet().size)
-            assertTrue("cipher letters stay inside the alphabet", encrypted.all { it in en })
-            assertTrue("no letter stands for itself", en.indices.none { en[it] == encrypted[it] })
+            for (alphabet in listOf(ru, en)) {
+                val key = NumberKey.random(alphabet, Random(seed))
+                val numbers = alphabet.map { checkNotNull(key.numberOf(it)) }
+                assertEquals("different letters get different numbers", alphabet.length, numbers.toSet().size)
+                assertEquals((1..alphabet.length).toSet(), numbers.toSet())
+            }
         }
     }
 
     @Test
-    fun sameLetterIsAlwaysEncryptedTheSameWay() {
-        val key = SubstitutionKey.random(ru, Random(3))
-        val encrypted = key.encrypt("КОТ КОТ ТОК")
-        assertEquals(encrypted.substring(0, 3), encrypted.substring(4, 7))
-        assertEquals(encrypted[0], encrypted[10])
+    fun numbersAreAssignedInDifferentOrderForDifferentGames() {
+        val first = NumberKey.random(ru, Random(1))
+        val second = NumberKey.random(ru, Random(2))
+        assertNotEquals(ru.map(first::numberOf), ru.map(second::numberOf))
+        // The order is random, not simply the position in the alphabet.
+        assertNotEquals((1..ru.length).toList(), ru.map(first::numberOf))
     }
 
     @Test
-    fun spacesPunctuationAndForeignLettersArePreserved() {
-        val key = SubstitutionKey.random(ru, Random(1))
-        val encrypted = key.encrypt("ДА-НЕТ, OK? 7!")
-        assertEquals("ДА-НЕТ, OK? 7!".length, encrypted.length)
-        for (i in encrypted.indices) {
-            val original = "ДА-НЕТ, OK? 7!"[i]
-            if (original !in ru) assertEquals(original, encrypted[i])
+    fun sameLetterAlwaysGetsTheSameNumber() {
+        val codes = NumberKey.random(ru, Random(3)).encode("КОТ КОТ ТОК")
+        assertEquals(codes.subList(0, 3), codes.subList(4, 7))
+        assertEquals(codes[0], codes[10])
+        assertEquals(3, codes.filter { it != NumberKey.NOT_A_LETTER }.toSet().size)
+    }
+
+    @Test
+    fun spacesPunctuationAndForeignLettersAreNotEncrypted() {
+        val text = "ДА-НЕТ, OK? 7!"
+        val codes = NumberKey.random(ru, Random(1)).encode(text)
+        assertEquals(text.length, codes.size)
+        for (i in text.indices) {
+            assertEquals(text[i] in ru, codes[i] != NumberKey.NOT_A_LETTER)
         }
+        assertEquals("__-___, OK? 7!", cryptogramTemplate(text, ru))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun keyRejectsTwoLettersWithSameCipher() {
-        SubstitutionKey(mapOf('A' to 'X', 'B' to 'X'))
+    fun keyRejectsTwoLettersWithSameNumber() {
+        NumberKey(mapOf('A' to 5, 'B' to 5))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun keyRejectsTheReservedNumber() {
+        NumberKey(mapOf('A' to NumberKey.NOT_A_LETTER))
     }
 }
 
@@ -99,10 +114,23 @@ class CryptogramGeneratorTest {
             repeat(10) { seed ->
                 val puzzle = generate("Волшебник — странный кот, ёж!", Language.RU, difficulty, seed)
                 assertEquals(emptyList<String>(), CryptogramValidator.validate(puzzle))
-                assertEquals("ВОЛШЕБНИК — СТРАННЫЙ КОТ, ЕЖ!", puzzle.text)
-                assertNotEquals(puzzle.text, puzzle.cipherText)
+                assertEquals("ВОЛШЕБНИК — СТРАННЫЙ КОТ, ЁЖ!", puzzle.text)
+                assertEquals(puzzle.text.length, puzzle.codes.size)
             }
         }
+    }
+
+    @Test
+    fun yoAndYeAreDifferentLetters() {
+        val puzzle = generate("Ёж ел", Language.RU, Difficulty.EXPERT)
+        assertNotEquals(puzzle.codes[0], puzzle.codes[3])
+    }
+
+    @Test
+    fun differentGamesEncryptTheSamePhraseDifferently() {
+        val first = generate("Practice makes perfect.", Language.EN, Difficulty.NORMAL, seed = 1)
+        val second = generate("Practice makes perfect.", Language.EN, Difficulty.NORMAL, seed = 2)
+        assertNotEquals(first.codes, second.codes)
     }
 
     @Test
@@ -124,8 +152,7 @@ class CryptogramGeneratorTest {
     fun hintsAreCorrectCorrespondences() {
         val puzzle = generate("Practice makes perfect.", Language.EN, Difficulty.EASY)
         for (hint in puzzle.hints) {
-            val index = puzzle.cipherText.indexOf(hint.cipher)
-            assertEquals(hint.plain, puzzle.text[index])
+            assertEquals(hint.plain, puzzle.text[puzzle.codes.indexOf(hint.code)])
         }
     }
 
@@ -133,15 +160,21 @@ class CryptogramGeneratorTest {
     fun validatorReportsBrokenPuzzles() {
         val good = generate("Кот и кит", Language.RU, Difficulty.HARD)
         fun problems(puzzle: CryptogramPuzzle) = CryptogramValidator.validate(puzzle)
+        fun withCode(index: Int, code: Int) = good.copy(codes = good.codes.toMutableList().also { it[index] = code })
 
-        assertTrue(problems(good.copy(cipherText = good.cipherText.dropLast(1))).isNotEmpty())
-        assertTrue(problems(good.copy(cipherText = good.cipherText.replace(' ', 'А'))).isNotEmpty())
-        assertTrue(problems(good.copy(hints = listOf(CryptogramHint(good.cipherText[0], 'Я')))).isNotEmpty())
+        assertTrue(problems(good.copy(codes = good.codes.dropLast(1))).isNotEmpty())
+        // A space must not get a number, and a letter must have one.
+        assertTrue(problems(withCode(3, 5)).isNotEmpty())
+        assertTrue(problems(withCode(0, NumberKey.NOT_A_LETTER)).isNotEmpty())
+        assertTrue(problems(withCode(0, 34)).isNotEmpty())
+        assertTrue(problems(good.copy(hints = listOf(CryptogramHint(good.codes[0], 'Я')))).isNotEmpty())
         assertTrue(problems(good.copy(text = good.text.lowercase())).isNotEmpty())
 
-        // К is encrypted in two different ways.
-        val conflicting = good.cipherText.toCharArray().also { it[6] = if (it[0] == 'Б') 'В' else 'Б' }
-        assertTrue(problems(good.copy(cipherText = String(conflicting))).isNotEmpty())
+        // К at position 6 gets a number different from К at position 0.
+        val unused = (1..33).first { it !in good.codes }
+        assertTrue(problems(withCode(6, unused)).isNotEmpty())
+        // К gets the number that already belongs to О.
+        assertTrue(problems(withCode(0, good.codes[1]).let { it.copy(codes = it.codes.toMutableList().also { c -> c[6] = good.codes[1] }) }).isNotEmpty())
     }
 }
 
@@ -190,14 +223,14 @@ class CryptogramContentTest {
 
 class CryptogramGameTest {
 
-    // КОТ И ТОК → cipher letters: К→А, О→Б, Т→В, И→Г
+    // КОТ И ТОК with К = 7, О = 12, Т = 3, И = 20
     private val puzzle = CryptogramPuzzle(
         id = "test",
         language = Language.RU,
         difficulty = Difficulty.EASY,
         text = "КОТ И ТОК",
-        cipherText = "АБВ Г ВБА",
-        hints = listOf(CryptogramHint(cipher = 'Г', plain = 'И')),
+        codes = listOf(7, 12, 3, 0, 20, 0, 3, 12, 7),
+        hints = listOf(CryptogramHint(code = 20, plain = 'И')),
     )
 
     private fun game(lives: Int? = null) = CryptogramGame(puzzle, lives, DefaultScoreCalculator()).also { it.start() }
@@ -208,10 +241,17 @@ class CryptogramGameTest {
     }
 
     @Test
-    fun startShowsInitialHintsAndSelectsFirstOpenLetter() {
+    fun testPuzzleIsValid() {
+        assertEquals(emptyList<String>(), CryptogramValidator.validate(puzzle))
+    }
+
+    @Test
+    fun startShowsNumbersInitialHintsAndSelectsFirstOpenLetter() {
         val state = game().getState()
+        assertEquals(puzzle.codes, state.codes)
+        assertEquals("___ _ ___", state.template)
         assertEquals('И', state.answerAt(4))
-        assertTrue('Г' in state.locked)
+        assertTrue(20 in state.locked)
         assertEquals(0, state.selected)
         assertNull(state.answerAt(0))
     }
@@ -233,7 +273,7 @@ class CryptogramGameTest {
         game.enter(0, 'Я')
         val state = game.getState()
         assertEquals('Я', state.answerAt(0))
-        assertEquals(setOf('А'), state.wrong)
+        assertEquals(setOf(7), state.wrong)
         assertEquals(1, state.mistakes)
         assertEquals(0, state.selected)
 
@@ -243,18 +283,18 @@ class CryptogramGameTest {
     }
 
     @Test
-    fun plainLetterBelongsToOnlyOneCipherLetter() {
+    fun letterBelongsToOnlyOneNumber() {
         val game = game()
         game.enter(0, 'Т')
         game.enter(1, 'Т')
         val state = game.getState()
         assertNull(state.answerAt(0))
         assertEquals('Т', state.answerAt(1))
-        assertEquals(setOf('Б'), state.wrong)
+        assertEquals(setOf(12), state.wrong)
     }
 
     @Test
-    fun solvedAndHintedLettersCannotBeChanged() {
+    fun solvedAndHintedNumbersCannotBeChanged() {
         val game = game()
         game.enter(0, 'К')
         game.enter(0, 'Я')
@@ -295,7 +335,7 @@ class CryptogramGameTest {
     }
 
     @Test
-    fun solvingAllLettersCompletesTheGame() {
+    fun solvingAllNumbersCompletesTheGame() {
         val game = game()
         game.enter(0, 'К')
         game.enter(1, 'О')

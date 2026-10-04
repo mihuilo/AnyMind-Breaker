@@ -9,7 +9,7 @@ import kotlin.random.Random
 
 /** A correspondence shown to the player before the game starts. */
 @Serializable
-data class CryptogramHint(val cipher: Char, val plain: Char)
+data class CryptogramHint(val code: Int, val plain: Char)
 
 @Serializable
 data class CryptogramPuzzle(
@@ -18,7 +18,8 @@ data class CryptogramPuzzle(
     override val difficulty: Difficulty,
     /** Normalized plain text. */
     val text: String,
-    val cipherText: String,
+    /** The number of each character of [text]; [NumberKey.NOT_A_LETTER] where nothing is encrypted. */
+    val codes: List<Int>,
     val hints: List<CryptogramHint>,
     override val createdAt: Long = 0,
     override val metadata: Map<String, String> = emptyMap(),
@@ -33,39 +34,39 @@ object CryptogramValidator {
         val problems = mutableListOf<String>()
         val alphabet = CryptogramAlphabet.of(puzzle.language)
         val text = puzzle.text
-        val cipher = puzzle.cipherText
+        val codes = puzzle.codes
 
         if (text != CryptogramAlphabet.normalize(text, puzzle.language)) problems += "text is not normalized"
         if (text.none { it in alphabet }) problems += "text has no letters of the puzzle alphabet"
-        if (text.length != cipher.length) {
-            problems += "text and cipher text differ in length"
+        if (text.length != codes.size) {
+            problems += "text and codes differ in length"
             return problems
         }
 
-        val cipherToPlain = mutableMapOf<Char, Char>()
-        val plainToCipher = mutableMapOf<Char, Char>()
+        val codeToLetter = mutableMapOf<Int, Char>()
+        val letterToCode = mutableMapOf<Char, Int>()
         for (i in text.indices) {
-            val plain = text[i]
-            val encrypted = cipher[i]
-            if (plain !in alphabet) {
-                if (encrypted != plain) problems += "character '$plain' at $i is not preserved"
+            val letter = text[i]
+            val code = codes[i]
+            if (letter !in alphabet) {
+                if (code != NumberKey.NOT_A_LETTER) problems += "character '$letter' at $i must not be encrypted"
                 continue
             }
-            if (encrypted !in alphabet) {
-                problems += "cipher character '$encrypted' at $i is not a letter"
+            if (code !in 1..alphabet.length) {
+                problems += "number $code at $i is outside 1..${alphabet.length}"
                 continue
             }
-            val knownPlain = cipherToPlain.getOrPut(encrypted) { plain }
-            if (knownPlain != plain) problems += "cipher letter '$encrypted' stands for both '$knownPlain' and '$plain'"
-            val knownCipher = plainToCipher.getOrPut(plain) { encrypted }
-            if (knownCipher != encrypted) problems += "plain letter '$plain' is encrypted as both '$knownCipher' and '$encrypted'"
+            val knownLetter = codeToLetter.getOrPut(code) { letter }
+            if (knownLetter != letter) problems += "number $code stands for both '$knownLetter' and '$letter'"
+            val knownCode = letterToCode.getOrPut(letter) { code }
+            if (knownCode != code) problems += "letter '$letter' is encrypted as both $knownCode and $code"
         }
 
         for (hint in puzzle.hints) {
-            if (cipherToPlain[hint.cipher] != hint.plain) problems += "hint ${hint.cipher} → ${hint.plain} is wrong"
+            if (codeToLetter[hint.code] != hint.plain) problems += "hint ${hint.code} → ${hint.plain} is wrong"
         }
-        if (puzzle.hints.map { it.cipher }.distinct().size != puzzle.hints.size) problems += "duplicate hints"
-        if (puzzle.hints.size >= cipherToPlain.size && cipherToPlain.isNotEmpty()) problems += "hints reveal the whole text"
+        if (puzzle.hints.map { it.code }.distinct().size != puzzle.hints.size) problems += "duplicate hints"
+        if (puzzle.hints.size >= codeToLetter.size && codeToLetter.isNotEmpty()) problems += "hints reveal the whole text"
 
         return problems.distinct()
     }
@@ -83,20 +84,20 @@ class CryptogramGenerator(private val random: Random = Random.Default) {
     ): CryptogramPuzzle {
         val alphabet = CryptogramAlphabet.of(language)
         val plain = CryptogramAlphabet.normalize(text, language)
-        val key = SubstitutionKey.random(alphabet, random)
+        val key = NumberKey.random(alphabet, random)
         val letters = plain.filter { it in alphabet }.toSet()
 
         val hints = letters.shuffled(random)
             .take(hintCount(difficulty, letters.size))
-            .map { CryptogramHint(cipher = checkNotNull(key.cipherOf(it)), plain = it) }
-            .sortedBy { it.cipher }
+            .map { CryptogramHint(code = checkNotNull(key.numberOf(it)), plain = it) }
+            .sortedBy { it.code }
 
         val puzzle = CryptogramPuzzle(
             id = id,
             language = language,
             difficulty = difficulty,
             text = plain,
-            cipherText = key.encrypt(plain),
+            codes = key.encode(plain),
             hints = hints,
             createdAt = createdAt,
         )

@@ -12,13 +12,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CryptogramState(
-    val cipherText: String,
-    /** Cipher letter → the plain letter the player assigned to it. */
-    val guesses: Map<Char, Char> = emptyMap(),
-    /** Cipher letters whose answer is known to be right and can no longer be changed. */
-    val locked: Set<Char> = emptySet(),
-    /** Cipher letters whose current guess is wrong. */
-    val wrong: Set<Char> = emptySet(),
+    /** The number shown under each character; [NumberKey.NOT_A_LETTER] where nothing is encrypted. */
+    val codes: List<Int>,
+    /** The text with letters hidden; gives the characters that are shown as they are. */
+    val template: String,
+    /** Number → the letter the player assigned to it. */
+    val guesses: Map<Int, Char> = emptyMap(),
+    /** Numbers whose answer is known to be right and can no longer be changed. */
+    val locked: Set<Int> = emptySet(),
+    /** Numbers whose current guess is wrong. */
+    val wrong: Set<Int> = emptySet(),
     /** Single positions opened by a hint, without revealing the whole correspondence. */
     val revealed: Map<Int, Char> = emptyMap(),
     /** Index of the selected character of the text. */
@@ -31,8 +34,10 @@ data class CryptogramState(
     override val result: GameResult = GameResult.IN_PROGRESS,
 ) : GameState {
 
+    fun isLetter(index: Int): Boolean = index in codes.indices && codes[index] != NumberKey.NOT_A_LETTER
+
     /** The letter shown in the answer field at [index], or null when the field is empty. */
-    fun answerAt(index: Int): Char? = revealed[index] ?: guesses[cipherText[index]]
+    fun answerAt(index: Int): Char? = revealed[index] ?: guesses[codes[index]]
 }
 
 sealed interface CryptogramAction : GameAction {
@@ -62,9 +67,9 @@ class CryptogramGame(
     override val gameType: GameType = GameType.CRYPTOGRAM
 
     private val alphabet = CryptogramAlphabet.of(puzzle.language)
-    private val cipher = puzzle.cipherText
-    private val solution: Map<Char, Char> =
-        cipher.indices.filter { cipher[it] in alphabet }.associate { cipher[it] to puzzle.text[it] }
+    private val codes = puzzle.codes
+    private val solution: Map<Int, Char> =
+        codes.indices.filter { codes[it] != NumberKey.NOT_A_LETTER }.associate { codes[it] to puzzle.text[it] }
 
     private var state = initialState ?: newState()
 
@@ -100,9 +105,10 @@ class CryptogramGame(
     )
 
     private fun newState(): CryptogramState {
-        val hints = puzzle.hints.associate { it.cipher to it.plain }
+        val hints = puzzle.hints.associate { it.code to it.plain }
         val initial = CryptogramState(
-            cipherText = cipher,
+            codes = codes,
+            template = cryptogramTemplate(puzzle.text, alphabet),
             guesses = hints,
             locked = hints.keys,
             livesLeft = lives,
@@ -110,34 +116,32 @@ class CryptogramGame(
         return initial.copy(selected = nextOpenPosition(initial, from = -1))
     }
 
-    private fun isLetter(index: Int) = index in cipher.indices && cipher[index] in alphabet
-
     /** A position the player still has to solve. */
     private fun isOpen(s: CryptogramState, index: Int) =
-        isLetter(index) && index !in s.revealed && cipher[index] !in s.locked
+        s.isLetter(index) && index !in s.revealed && codes[index] !in s.locked
 
     private fun nextOpenPosition(s: CryptogramState, from: Int): Int? {
-        for (step in 1..cipher.length) {
-            val index = (from + step).mod(cipher.length)
+        for (step in 1..codes.size) {
+            val index = (from + step).mod(codes.size)
             if (isOpen(s, index)) return index
         }
         return null
     }
 
     private fun isSolved(s: CryptogramState) =
-        cipher.indices.all { !isLetter(it) || s.answerAt(it) == puzzle.text[it] }
+        codes.indices.all { !s.isLetter(it) || s.answerAt(it) == puzzle.text[it] }
 
     private fun finishIfSolved(s: CryptogramState) =
         if (isSolved(s)) s.copy(result = GameResult.COMPLETED) else s
 
-    private fun select(index: Int) = if (isLetter(index)) state.copy(selected = index) else state
+    private fun select(index: Int) = if (state.isLetter(index)) state.copy(selected = index) else state
 
     private fun input(letter: Char): CryptogramState {
         val position = state.selected?.takeIf { isOpen(state, it) } ?: return state
-        val target = cipher[position]
+        val target = codes[position]
         if (letter !in alphabet || state.guesses[target] == letter) return state
 
-        // A plain letter can stand for only one cipher letter, so it is taken from its previous owner.
+        // A letter can stand behind only one number, so it is taken from its previous owner.
         val previousOwner = state.guesses.entries.firstOrNull { it.value == letter }?.key
         if (previousOwner != null && previousOwner in state.locked) return state
 
@@ -169,23 +173,23 @@ class CryptogramGame(
 
     private fun erase(): CryptogramState {
         val position = state.selected?.takeIf { isOpen(state, it) } ?: return state
-        val target = cipher[position]
+        val target = codes[position]
         if (target !in state.guesses) return state
         return state.copy(guesses = state.guesses - target, wrong = state.wrong - target)
     }
 
-    private fun withSolvedLetters(s: CryptogramState, letters: Collection<Char>): CryptogramState {
+    private fun withSolvedNumbers(s: CryptogramState, numbers: Collection<Int>): CryptogramState {
         val guesses = s.guesses.toMutableMap()
-        for (letter in letters) {
-            val plain = solution.getValue(letter)
-            // Drop a wrong guess that currently occupies this plain letter.
-            guesses.entries.removeAll { it.value == plain && it.key != letter }
-            guesses[letter] = plain
+        for (number in numbers) {
+            val letter = solution.getValue(number)
+            // Drop a wrong guess that currently occupies this letter.
+            guesses.entries.removeAll { it.value == letter && it.key != number }
+            guesses[number] = letter
         }
         return s.copy(
             guesses = guesses,
-            locked = s.locked + letters,
-            wrong = s.wrong.filter { it in guesses && it !in letters }.toSet(),
+            locked = s.locked + numbers,
+            wrong = s.wrong.filter { it in guesses && it !in numbers }.toSet(),
         )
     }
 
@@ -199,17 +203,17 @@ class CryptogramGame(
 
     private fun hintLetter(): CryptogramState {
         val position = hintTarget() ?: return state
-        return afterHint(withSolvedLetters(state, listOf(cipher[position])), position)
+        return afterHint(withSolvedNumbers(state, listOf(codes[position])), position)
     }
 
     private fun hintWord(): CryptogramState {
         val position = hintTarget() ?: return state
         var start = position
-        while (isLetter(start - 1)) start--
+        while (state.isLetter(start - 1)) start--
         var end = position
-        while (isLetter(end + 1)) end++
-        val letters = (start..end).map { cipher[it] }.filter { it !in state.locked }.distinct()
-        return afterHint(withSolvedLetters(state, letters), position)
+        while (state.isLetter(end + 1)) end++
+        val numbers = (start..end).map { codes[it] }.filter { it !in state.locked }.distinct()
+        return afterHint(withSolvedNumbers(state, numbers), position)
     }
 
     private fun hintPosition(): CryptogramState {

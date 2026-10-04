@@ -35,36 +35,33 @@ import com.anymindbreaker.core.common.game.Language
 import com.anymindbreaker.core.ui.components.rememberPopScale
 import com.anymindbreaker.core.ui.components.rememberShakeOffset
 import com.anymindbreaker.core.ui.theme.Spacing
-import com.anymindbreaker.feature.cryptogram.domain.CryptogramAlphabet
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramState
 
 private val CELL_WIDTH = 22.dp
 
 @Composable
-private fun answerColor(state: CryptogramState, cipher: Char, isRevealed: Boolean): Color = when {
-    cipher in state.wrong && !isRevealed -> MaterialTheme.colorScheme.error
-    cipher in state.locked || isRevealed -> MaterialTheme.colorScheme.onSurface
+private fun answerColor(state: CryptogramState, code: Int, isRevealed: Boolean): Color = when {
+    code in state.wrong && !isRevealed -> MaterialTheme.colorScheme.error
+    code in state.locked || isRevealed -> MaterialTheme.colorScheme.onSurface
     else -> MaterialTheme.colorScheme.primary
 }
 
-/** The encrypted text: every letter has its own answer field above the cipher letter. */
+/** The encrypted text: every letter has its own answer field above the number that hides it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CryptogramText(
     state: CryptogramState,
-    language: Language,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val alphabet = CryptogramAlphabet.of(language)
-    val text = state.cipherText
-    val selectedCipher = state.selected?.let { text[it] }
+    val template = state.template
+    val selectedCode = state.selected?.let { state.codes[it] }
 
     // Words are kept whole so a line never breaks in the middle of a word.
     val words = buildList {
         var start = 0
-        for (i in 0..text.length) {
-            if (i == text.length || text[i] == ' ') {
+        for (i in 0..template.length) {
+            if (i == template.length || template[i] == ' ') {
                 if (i > start) add(start until i)
                 start = i + 1
             }
@@ -79,24 +76,24 @@ fun CryptogramText(
         for (word in words) {
             Row {
                 for (index in word) {
-                    val cipher = text[index]
-                    if (cipher in alphabet) {
+                    val code = state.codes[index]
+                    if (state.isLetter(index)) {
                         LetterCell(
                             answer = state.answerAt(index),
-                            cipher = cipher,
-                            answerColor = answerColor(state, cipher, index in state.revealed),
-                            shake = cipher == selectedCipher && cipher in state.wrong,
+                            code = code,
+                            answerColor = answerColor(state, code, index in state.revealed),
+                            shake = code == selectedCode && code in state.wrong,
                             mistakes = state.mistakes,
                             background = when {
                                 index == state.selected -> MaterialTheme.colorScheme.primaryContainer
-                                cipher == selectedCipher -> MaterialTheme.colorScheme.secondaryContainer
+                                code == selectedCode -> MaterialTheme.colorScheme.secondaryContainer
                                 else -> Color.Transparent
                             },
                             onClick = { onSelect(index) },
                             modifier = Modifier.testTag("crypto_cell_$index"),
                         )
                     } else {
-                        SymbolCell(symbol = cipher)
+                        SymbolCell(symbol = template[index])
                     }
                 }
             }
@@ -107,7 +104,7 @@ fun CryptogramText(
 @Composable
 private fun LetterCell(
     answer: Char?,
-    cipher: Char,
+    code: Int,
     answerColor: Color,
     shake: Boolean,
     mistakes: Int,
@@ -119,7 +116,7 @@ private fun LetterCell(
     val popScale by rememberPopScale(answer)
     val description = stringResource(
         R.string.cryptogram_cell_description,
-        cipher.toString(),
+        code,
         answer?.toString() ?: stringResource(R.string.cell_empty),
     )
     Column(
@@ -150,8 +147,10 @@ private fun LetterCell(
                 .background(MaterialTheme.colorScheme.outline),
         )
         Text(
-            text = cipher.toString(),
+            text = code.toString(),
             fontSize = 12.sp,
+            maxLines = 1,
+            softWrap = false,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -172,50 +171,47 @@ private fun SymbolCell(symbol: Char) {
     }
 }
 
-/** Table of correspondences: every cipher letter of the text with the answer given so far. */
+/** Table of correspondences: every number of the text with the letter given so far. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CryptogramMappingTable(
     state: CryptogramState,
-    language: Language,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val alphabet = CryptogramAlphabet.of(language)
-    val text = state.cipherText
-    val selectedCipher = state.selected?.let { text[it] }
-    val letters = text.filter { it in alphabet }.toSortedSet()
+    val selectedCode = state.selected?.let { state.codes[it] }
+    val numbers = state.codes.indices.filter(state::isLetter).map { state.codes[it] }.toSortedSet()
 
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
-        for (cipher in letters) {
+        for (number in numbers) {
             Row(
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.small)
                     .background(
-                        if (cipher == selectedCipher) {
+                        if (number == selectedCode) {
                             MaterialTheme.colorScheme.primaryContainer
                         } else {
                             MaterialTheme.colorScheme.surfaceContainer
                         },
                     )
-                    .clickable { onSelect(text.indexOf(cipher)) }
+                    .clickable { onSelect(state.codes.indexOf(number)) }
                     .padding(horizontal = Spacing.xs, vertical = Spacing.xxs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "$cipher → ",
+                    text = "$number → ",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = (state.guesses[cipher] ?: '·').toString(),
+                    text = (state.guesses[number] ?: '·').toString(),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = answerColor(state, cipher, isRevealed = false),
+                    color = answerColor(state, number, isRevealed = false),
                 )
             }
         }
@@ -223,7 +219,7 @@ fun CryptogramMappingTable(
 }
 
 private fun keyboardRows(language: Language): List<String> = when (language) {
-    Language.RU -> listOf("ЙЦУКЕНГШЩЗХ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЪ")
+    Language.RU -> listOf("ЙЦУКЕНГШЩЗХ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮЪЁ")
     Language.EN -> listOf("QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")
 }
 

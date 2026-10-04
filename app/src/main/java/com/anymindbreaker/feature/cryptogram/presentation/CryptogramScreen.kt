@@ -179,13 +179,13 @@ private fun CryptogramPlay(
                 .padding(horizontal = Spacing.xs),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            CryptogramText(state = state, language = language, onSelect = select)
+            CryptogramText(state = state, onSelect = select)
             Text(
                 text = stringResource(R.string.cryptogram_table_title),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            CryptogramMappingTable(state = state, language = language, onSelect = select)
+            CryptogramMappingTable(state = state, onSelect = select)
         }
         Spacer(Modifier.height(Spacing.xs))
         Row(

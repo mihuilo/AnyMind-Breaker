@@ -13,8 +13,8 @@ import com.anymindbreaker.core.common.game.Language
 import com.anymindbreaker.core.ui.theme.AnyMindBreakerTheme
 import com.anymindbreaker.feature.cryptogram.data.CryptogramText
 import com.anymindbreaker.feature.cryptogram.data.CryptogramTextSource
-import com.anymindbreaker.feature.cryptogram.domain.CryptogramAlphabet
 import com.anymindbreaker.feature.cryptogram.domain.CryptogramGenerator
+import com.anymindbreaker.feature.cryptogram.domain.NumberKey
 import com.anymindbreaker.feature.cryptogram.presentation.CryptogramScreen
 import com.anymindbreaker.feature.cryptogram.presentation.CryptogramViewModel
 import org.junit.Rule
@@ -57,12 +57,11 @@ class CryptogramScreenTest {
             composeRule.onAllNodesWithTag("crypto_cell_0").fetchSemanticsNodes().isNotEmpty()
         }
 
-        val alphabet = CryptogramAlphabet.of(Language.EN)
-        val hinted = puzzle.hints.map { it.cipher }.toSet()
-        val solved = mutableSetOf<Char>()
-        for (index in puzzle.cipherText.indices) {
-            val cipher = puzzle.cipherText[index]
-            if (cipher !in alphabet || cipher in hinted || !solved.add(cipher)) continue
+        val hinted = puzzle.hints.map { it.code }.toSet()
+        val solved = mutableSetOf<Int>()
+        for (index in puzzle.codes.indices) {
+            val code = puzzle.codes[index]
+            if (code == NumberKey.NOT_A_LETTER || code in hinted || !solved.add(code)) continue
             composeRule.onNodeWithTag("crypto_cell_$index").performScrollTo().performClick()
             composeRule.onNodeWithTag("crypto_key_${puzzle.text[index]}").performClick()
         }

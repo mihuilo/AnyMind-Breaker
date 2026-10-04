@@ -15,7 +15,7 @@
     <string name="value_empty">—</string>
 
     <string name="game_cryptogram">Cryptogram</string>
-    <string name="game_cryptogram_description">Restore the text by replacing every cipher letter</string>
+    <string name="game_cryptogram_description">Restore the text: every number hides a letter</string>
     <string name="game_sudoku">Sudoku</string>
     <string name="game_sudoku_description">Classic 9×9 grid</string>
 
@@ -107,5 +107,5 @@
     <string name="action_view_statistics">View statistics</string>
     <string name="cell_empty">empty</string>
     <string name="sudoku_cell_description">Row %1$d, column %2$d: %3$s</string>
-    <string name="cryptogram_cell_description">Cipher letter %1$s, answer: %2$s</string>
+    <string name="cryptogram_cell_description">Number %1$d, answer: %2$s</string>
 </resources>
